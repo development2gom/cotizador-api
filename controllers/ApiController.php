@@ -32,6 +32,8 @@ class ApiController extends Controller
             'buscar-cliente' => ['GET', 'HEAD'],
             'direcciones-origen' => ['POST'],
             'direcciones-destino' => ['POST'],
+            'direccion-origen' => ['POST'],
+            'direccion-destino' => ['POST'],
             'update' => ['PUT', 'PATCH'],
             'delete' => ['DELETE'],
         ];
@@ -138,5 +140,71 @@ class ApiController extends Controller
         $response->operation = "Lista de direcciones destino de un cliente";
 
         return $response;
+    }
+
+    /**
+     * Servicio para buscar una direccion origen del cliente
+     */
+    public function actionDireccionOrigen(){
+        $request = Yii::$app->request;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        if(empty($request->getBodyParam('id_origen'))){
+            $error->message = 'Body de la petición faltante';
+
+            return $error;
+        }
+
+        //verifica que los parámetros solicitados se encuentren
+        $id_origen = $request->getBodyParam('id_origen');
+
+        $direccion = WrkOrigen::find()->where(['id_origen'=>$id_origen])->one();
+        if(!$direccion){
+            $error->message = 'La dirección no se encontro';
+            
+            return $error;
+        }
+
+        $success = new MessageResponse();
+        $success->message = "Success";
+        $success->responseCode = 1;
+        $success->data = $direccion;
+
+        return $success;
+    }
+
+    /**
+     * Servicio para buscar una direccion destino del cliente
+     */
+    public function actionDireccionDestino(){
+        $request = Yii::$app->request;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        if(empty($request->getBodyParam('id_destino'))){
+            $error->message = 'Body de la petición faltante';
+
+            return $error;
+        }
+
+        //verifica que los parámetros solicitados se encuentren
+        $id_destino = $request->getBodyParam('id_destino');
+
+        $direccion = WrkDestino::find()->where(['id_destino'=>$id_destino])->one();
+        if(!$direccion){
+            $error->message = 'La dirección no se encontro';
+            
+            return $error;
+        }
+
+        $success = new MessageResponse();
+        $success->message = "Success";
+        $success->responseCode = 1;
+        $success->data = $direccion;
+
+        return $success;
     }
 }

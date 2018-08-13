@@ -12,6 +12,10 @@ use app\models\EntClientes;
 use app\models\WrkOrigen;
 use app\models\ListResponse;
 use app\models\WrkDestino;
+use app\models\EnviosObject;
+use yii\helpers\Url;
+use app\models\Calendario;
+use app\models\Utils;
 
 /**
  * ConCategoiriesController implements the CRUD actions for ConCategoiries model.
@@ -34,6 +38,9 @@ class ApiController extends Controller
             'direcciones-destino' => ['POST'],
             'direccion-origen' => ['POST'],
             'direccion-destino' => ['POST'],
+            'datos-estafeta' => ['POST'],
+            'datos-fedex' => ['POST'],
+
             'update' => ['PUT', 'PATCH'],
             'delete' => ['DELETE'],
         ];
@@ -206,5 +213,193 @@ class ApiController extends Controller
         $success->data = $direccion;
 
         return $success;
+    }
+
+    /**
+     * 
+     */
+    public function actionDatosEstafeta($package = null){
+        $request = Yii::$app->request;//print_r($request->getBodyParam('from'));exit;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        if(empty($request->getBodyParam('from'))){
+            $error->message = 'Body de la petición faltante';
+
+            return $error;
+        }
+
+        if(empty($request->getBodyParam('to'))){
+            $error->message = 'Body de la petición faltante1';
+
+            return $error;
+        }
+
+        //verifica que los parámetros solicitados se encuentren
+        $from = $request->getBodyParam('from');
+        $to = $request->getBodyParam('to');
+
+        $params['shiper'] = [
+            "postal_code" => $from,
+        ];
+        $params['recipient'] = [
+            'postal_code' => $to
+        ];
+        $params['package'] = [
+            "peso_kg" => 2, 
+            "largo_cm" => 200,
+            "ancho_cm" => 20,
+            "alto_cm" => 10
+        ];
+
+        $curl = \curl_init();
+        //$curl = new GuzzleHttp();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => "https://dev.2geeksonemonkey.com/cotizador-envios/web/estafeta-services/frecuencia-cotizador",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => json_encode($params),
+            CURLOPT_HTTPHEADER => array(
+                "Content-Type: application/json",
+            ),
+        ));
+
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+
+        curl_close($curl);
+
+        if($err){
+            echo "cURL Error #:" . $err;
+        }else{
+            //echo $response;
+            $datos = self::objetosEstafeta(json_decode($response));
+            return $datos;
+        }
+    }
+
+    public static function objetosEstafeta($response){   
+        $arrayEnvios = [];
+        $i = 0;
+        
+        foreach($response->FrecuenciaCotizadorResult->Respuesta->TipoServicio->TipoServicio as $opcion){
+            if($opcion->CostoTotal > 0){
+                //echo $opcion->CostoTotal . "<br/>";
+                $objetoEnvio = new EnviosObject();
+                $objetoEnvio->cpOrigen = $response->FrecuenciaCotizadorResult->Respuesta->Origen->CodigoPosOri;
+                $objetoEnvio->cpDestino = $response->FrecuenciaCotizadorResult->Respuesta->Destino->CpDestino;
+                $objetoEnvio->mensajeria = "Estafeta";
+                $objetoEnvio->precioOriginal = $opcion->CostoTotal;
+                //$objetoEnvio->precioCliente = $objetoEnvio->calcularPrecioCliente($opcion->CostoTotal);
+                $objetoEnvio->precioCliente = $objetoEnvio->calcularPrecioCliente();
+                $objetoEnvio->tipoEnvio = $opcion->DescripcionServicio;
+                $objetoEnvio->urlImagen = Url::base()."/webAssets/images/estafeta.png";
+
+                $arrayEnvios[$i] = $objetoEnvio;
+                $i++;
+            }
+        }
+        //print_r($arrayEnvios);exit;
+        return $arrayEnvios;
+    }
+
+    public function actionFedex(){
+        $request = Yii::$app->request;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        if(empty($request->getBodyParam('from'))){
+            $error->message = 'Body de la petición faltante1';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('countryCodeFrom'))){
+            $error->message = 'Body de la petición faltante2';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('countryCodeTo'))){
+            $error->message = 'Body de la petición faltante3';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('to'))){
+            $error->message = 'Body de la petición faltante4';
+
+            return $error;
+        }
+
+        //verifica que los parámetros solicitados se encuentren
+        $from = $request->getBodyParam('from');
+        $countryCodeFrom = $request->getBodyParam('countryCodeFrom');
+        $countryCodeTo = $request->getBodyParam('countryCodeTo');
+        $to = $request->getBodyParam('to');
+
+        $data = [];
+        $fecha = Utils::changeFormatDateInputShort(Calendario::getFechaActual());
+        $opcionesEnvio = $this->validarDisponibilidad($fecha, $from, $to, $countryCodeFrom, $countryCodeTo);
+        print_r($opcionesEnvio);exit;
+
+        foreach ($opcionesEnvio->data->options as $opciones) {
+            $costo = $this->getCosto($opciones->Service, $from, $to, $countryCodeFrom, $countryCodeTo);
+
+            if (isset($costo->HighestSeverity) && $costo->HighestSeverity != "ERROR") {
+                $eo = new EnviosObject();
+                $eo->cpOrigen = $from;
+                $eo->cpDestino = $to;
+                $eo->precioOriginal = $costo->RateReplyDetails->RatedShipmentDetails[1]->ShipmentRateDetail->TotalNetCharge->Amount;
+                $eo->mensajeria = "FEDEX";
+                $eo->fechaEntrega = Calendario::getDateComplete($costo->RateReplyDetails->CommitDetails->CommitTimestamp);
+                $eo->tipoEnvio = $costo->RateReplyDetails->ServiceType;
+                $eo->urlImagen = Url::base()."/webAssets/images/fedex.png";
+                $data[] = $eo;
+            }
+        }
+
+        return $data;
+    }
+
+    public function validarDisponibilidad($date, $from, $to, $countryCodeFrom, $countryCodeTo){
+        $curl = curl_init();
+        
+        $params["ship_date"] = $date;
+        $params["shiper"]["postal_code"] = $from;
+        $params["shiper"]["country_code"] = $countryCodeFrom;
+        $params["recipient"]["country_code"] = $countryCodeTo;
+        $params["recipient"]["postal_code"] = $to;
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => "https://dev.2geeksonemonkey.com/cotizador-envios/web/services/validate-cp",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => json_encode($params),
+            CURLOPT_HTTPHEADER => array(
+                "Cache-Control: no-cache",
+                "Content-Type: application/json",
+            ),
+        ));
+
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+
+        curl_close($curl);
+
+        if ($err) {
+            "cURL Error #:" . $err;
+            return false;
+        } else {
+            return json_decode($response);
+        }
     }
 }

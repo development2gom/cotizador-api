@@ -16,6 +16,7 @@ use app\models\EnviosObject;
 use yii\helpers\Url;
 use app\models\Calendario;
 use app\models\Utils;
+use app\models\EntPagosRecibidos;
 
 /**
  * ConCategoiriesController implements the CRUD actions for ConCategoiries model.
@@ -42,6 +43,7 @@ class ApiController extends Controller
             'datos-fedex' => ['POST'],
             'guardar-origen' => ['POST'],
             'guardar-destino' => ['POST'],
+            'pagos-recibidos' => ['POST'],
 
             'update' => ['PUT', 'PATCH'],
             'delete' => ['DELETE'],
@@ -449,5 +451,29 @@ class ApiController extends Controller
 
             return $error;
         }
+    }
+
+    public function actionPagosRecibidos(){
+        $request = Yii::$app->request;
+        
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        if(empty($request->getBodyParam('id_cliente'))){
+            $error->message = 'Body de la petición faltante';
+
+            return $error;
+        }
+
+        $id_cliente = $request->getBodyParam('id_cliente');
+
+        $pagos = EntPagosRecibidos::find()->where(['id_cliente'=>$id_cliente])->all();
+        if($pagos){
+
+            return $pagos;
+        }
+        $error->message = 'No hay pagos realizados';
+
+        return $error;
     }
 }

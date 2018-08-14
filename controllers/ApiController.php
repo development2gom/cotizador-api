@@ -26,6 +26,7 @@ use app\models\CatPaises;
  */
 class ApiController extends Controller
 {   
+    public $enableCsrfValidation = false;
     public $serializer = [
         'class' => 'app\components\SerializerExtends',
         'collectionEnvelope' => 'items',

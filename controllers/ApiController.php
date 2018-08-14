@@ -40,6 +40,8 @@ class ApiController extends Controller
             'direccion-destino' => ['POST'],
             'datos-estafeta' => ['POST'],
             'datos-fedex' => ['POST'],
+            'guardar-origen' => ['POST'],
+            'guardar-destino' => ['POST'],
 
             'update' => ['PUT', 'PATCH'],
             'delete' => ['DELETE'],
@@ -400,6 +402,52 @@ class ApiController extends Controller
             return false;
         } else {
             return json_decode($response);
+        }
+    }
+
+    public function actionGuardarOrigen(){
+        $request = Yii::$app->request;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        $datosOrigen = new WrkOrigen();
+        if($datosOrigen->load($request->bodyParams, "")){
+            if(!$datosOrigen->save()){
+                $error->message = 'No se guardo la direccion';
+                $error->data = $datosOrigen->errors;
+
+                return $error;
+            }
+
+            return $datosOrigen;
+        }else{
+            $error->message = 'No hay datos para guardar la direccion';
+
+            return $error;
+        }
+    }
+
+    public function actionGuardarDestino(){
+        $request = Yii::$app->request;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        $datosDestino = new WrkDestino();
+        if($datosDestino->load($request->bodyParams, "")){
+            if(!$datosDestino->save()){
+                $error->message = 'No se guardo la direccion';
+                $error->data = $datosDestino->errors;
+
+                return $error;
+            }
+
+            return $datosDestino;
+        }else{
+            $error->message = 'No hay datos para guardar la direccion';
+
+            return $error;
         }
     }
 }

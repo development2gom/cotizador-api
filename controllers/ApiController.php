@@ -141,14 +141,20 @@ class ApiController extends Controller
             return $error;
         }
 
-        $origenes = WrkOrigen::find()->where(['id_cliente'=>$cliente->id_cliente])->andWhere(['!=', 'txt_nombre_ubicacion', ''])->all();
-        
-        $response = new ListResponse();
-        $response->results = $origenes;
-        $response->count = count($origenes);
-        $response->operation = "Lista de direcciones origen de un cliente";
-
-        return $response;
+        $origenes = WrkOrigen::find()->where(['id_cliente'=>$cliente->id_cliente])->andWhere(['!=', 'txt_nombre_ubicacion', ''])->all();  
+         
+        $selected = '';
+        $out = [];
+        foreach ($origenes as $i => $origen) {
+            $out[] = [
+                'id' => $origen->id_origen, 
+                'name' => $origen->txt_nombre_ubicacion];
+            if ($i == 0) {
+                $selected = null;
+            }
+        }
+        // Shows how you can preselect a value
+        return ['output' => $out, 'selected'=>$selected];
     }
 
     /**
@@ -180,12 +186,18 @@ class ApiController extends Controller
 
         $destinos = WrkDestino::find()->where(['id_cliente'=>$cliente->id_cliente])->andWhere(['!=', 'txt_nombre_ubicacion', ''])->all();
         
-        $response = new ListResponse();
-        $response->results = $destinos;
-        $response->count = count($destinos);
-        $response->operation = "Lista de direcciones destino de un cliente";
-
-        return $response;
+        $selected = '';
+        $out = [];
+        foreach ($destinos as $i => $destino) {
+            $out[] = [
+                'id' => $destino->id_destino, 
+                'name' => $destino->txt_nombre_ubicacion];
+            if ($i == 0) {
+                $selected = null;
+            }
+        }
+        // Shows how you can preselect a value
+        return ['output' => $out, 'selected'=>$selected];
     }
 
     /**

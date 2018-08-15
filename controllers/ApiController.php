@@ -124,14 +124,14 @@ class ApiController extends Controller
         $error = new MessageResponse();
         $error->responseCode = -1;
 
-        if(empty($request->getBodyParam('uddi_cliente'))){
+        if(empty($request->getBodyParam('depdrop_all_params')['search-cliente'])){
             $error->message = 'Body de la petición faltante';
 
             return $error;
         }
 
         //verifica que los parámetros solicitados se encuentren
-        $uddi_cliente = $request->getBodyParam('uddi_cliente');
+        $uddi_cliente = $request->getBodyParam('depdrop_all_params')['search-cliente'];
 
         $cliente = EntClientes::find()->where(['uddi'=>$uddi_cliente])->one();
         
@@ -161,14 +161,14 @@ class ApiController extends Controller
         $error = new MessageResponse();
         $error->responseCode = -1;
 
-        if(empty($request->getBodyParam('uddi_cliente'))){
+        if(empty($request->getBodyParam('depdrop_all_params')['search-cliente'])){
             $error->message = 'Body de la petición faltante';
 
             return $error;
         }
 
         //verifica que los parámetros solicitados se encuentren
-        $uddi_cliente = $request->getBodyParam('uddi_cliente');
+        $uddi_cliente = $request->getBodyParam('depdrop_all_params')['search-cliente'];
 
         $cliente = EntClientes::find()->where(['uddi'=>$uddi_cliente])->one();
 

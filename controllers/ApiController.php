@@ -272,8 +272,25 @@ class ApiController extends Controller
         $error = new MessageResponse();
         $error->responseCode = -1;
 
+        if(empty($request->getBodyParam('uddi_cliente'))){
+            $error->message = 'Falta seleccionar un cliente';
+
+            return $error;
+        }
+
+        //verifica que los parámetros solicitados se encuentren
+        $uddi_cliente = $request->getBodyParam('uddi_cliente');
+
         $datosOrigen = new WrkOrigen();
-        if($datosOrigen->load($request->bodyParams, "")){
+        if($datosOrigen->load($request->bodyParams)){
+            $cliente = EntClientes::find()->where(['uddi'=>$uddi_cliente])->one();
+            if(!$cliente){
+                $error->message = 'El cliente no se encuentra registrado';
+
+                return $error;
+            }
+
+            $datosOrigen->id_cliente = $cliente->id_cliente;
             if(!$datosOrigen->save()){
                 $error->message = 'No se guardo la direccion';
                 $error->data = $datosOrigen->errors;
@@ -295,8 +312,25 @@ class ApiController extends Controller
         $error = new MessageResponse();
         $error->responseCode = -1;
 
+        if(empty($request->getBodyParam('uddi_cliente'))){
+            $error->message = 'Falta seleccionar un cliente';
+
+            return $error;
+        }
+
+        //verifica que los parámetros solicitados se encuentren
+        $uddi_cliente = $request->getBodyParam('uddi_cliente');
+
         $datosDestino = new WrkDestino();
-        if($datosDestino->load($request->bodyParams, "")){
+        if($datosDestino->load($request->bodyParams)){
+            $cliente = EntClientes::find()->where(['uddi'=>$uddi_cliente])->one();
+            if(!$cliente){
+                $error->message = 'El cliente no se encuentra registrado';
+
+                return $error;
+            }
+
+            $datosDestino->id_cliente = $cliente->id_cliente;
             if(!$datosDestino->save()){
                 $error->message = 'No se guardo la direccion';
                 $error->data = $datosDestino->errors;

@@ -20,6 +20,7 @@ use app\models\EntPagosRecibidos;
 use app\models\Fedex;
 use app\models\Estafeta;
 use app\models\CatPaises;
+use yii\filters\auth\HttpBearerAuth;
 
 /**
  * ConCategoiriesController implements the CRUD actions for ConCategoiries model.
@@ -31,6 +32,35 @@ class ApiController extends Controller
         'class' => 'app\components\SerializerExtends',
         'collectionEnvelope' => 'items',
     ];
+
+    public function behaviors()
+    {
+        $behaviors = parent::behaviors();
+        $behaviors['corsFilter'] = [
+            'class' => \yii\filters\Cors::className(),
+            'cors' => [
+                // restrict access to
+                'Origin' => ['*'],  //this is my angular2 source
+                'Access-Control-Request-Method' => ['POST', 'GET','PUT', 'OPTIONS'],
+                // Allow only POST and PUT methods
+                'Access-Control-Request-Headers' => ['*'],
+                // Allow only headers 'X-Wsse'
+                // 'Access-Control-Allow-Credentials' => true,
+                // Allow OPTIONS caching
+                'Access-Control-Max-Age' => 3600,
+                // Allow the X-Pagination-Current-Page header to be exposed to the browser.
+                'Access-Control-Expose-Headers' => ['X-Pagination-Current-Page'],
+            ],
+        ];
+    
+        $auth = $behaviors['authenticator'] = [
+            'class' => HttpBearerAuth::className(),
+            'only' => ['can-access','profile'],  //access controller
+        ];
+    
+       $behaviors['authenticator']['except'] = ['options'];
+        return $behaviors;
+    }
 
     /**
      * {@inheritdoc}

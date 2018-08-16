@@ -80,6 +80,8 @@ class ApiController extends Controller
             'pagos-recibidos' => ['POST'],
             'get-cotizacion' => ['POST'],
 
+            'crear-cliente' => ['GET', 'HEAD'],
+
             'update' => ['PUT', 'PATCH'],
             'delete' => ['DELETE'],
         ];
@@ -414,5 +416,9 @@ class ApiController extends Controller
         EnviosObject::setSessionEnvios($data);
 
         return $data;
+    }
+
+    public function actionCrearCliente(){
+        
     }
 }

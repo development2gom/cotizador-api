@@ -40,7 +40,7 @@ class ApiController extends Controller
             'class' => \yii\filters\Cors::className(),
             'cors' => [
                 // restrict access to
-                'Origin' => ['*'],  //this is my angular2 source
+                'Origin' => ['*'],
                 'Access-Control-Request-Method' => ['POST', 'GET','PUT', 'OPTIONS'],
                 // Allow only POST and PUT methods
                 'Access-Control-Request-Headers' => ['*'],
@@ -419,6 +419,22 @@ class ApiController extends Controller
     }
 
     public function actionCrearCliente(){
-        
+        $request = Yii::$app->request;
+
+        $model = new EntClientes();
+        $model->scenario = "registerInput";
+
+        if($model->load($request->bodyParams)){
+            if(!$model->save()){
+                
+                return $model;
+            }
+
+            return $model;
+        }else{
+            $error->message = 'No hay datos para guardar al cliente';
+
+            return $error;
+        }
     }
 }

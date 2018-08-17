@@ -80,7 +80,7 @@ class ApiController extends Controller
             'pagos-recibidos' => ['POST'],
             'get-cotizacion' => ['POST'],
 
-            'crear-cliente' => ['GET', 'HEAD'],
+            'crear-cliente' => ['POST'],
 
             'update' => ['PUT', 'PATCH'],
             'delete' => ['DELETE'],
@@ -425,6 +425,8 @@ class ApiController extends Controller
         $model->scenario = "registerInput";
 
         if($model->load($request->bodyParams)){
+            $model->uddi = Utils::generateToken();
+
             if(!$model->save()){
                 
                 return $model;

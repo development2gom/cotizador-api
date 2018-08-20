@@ -381,39 +381,38 @@ class ApiController extends Controller
         $error = new MessageResponse();
         $error->responseCode = -1;
 
-        if(empty($request->getBodyParam('from'))){
+        if(empty($request->getBodyParam('ObjectCotizar')['cpFrom'])){
             $error->message = 'Body de la petición faltante1';
 
             return $error;
         }
-        if(empty($request->getBodyParam('pais_origen'))){
+        if(empty($request->getBodyParam('ObjectCotizar')['countryCodeFrom'])){
             $error->message = 'Body de la petición faltante2';
 
             return $error;
         }
-        if(empty($request->getBodyParam('pais_destino'))){
+        if(empty($request->getBodyParam('ObjectCotizar')['countryCodeTo'])){
             $error->message = 'Body de la petición faltante3';
 
             return $error;
         }
-        if(empty($request->getBodyParam('to'))){
+        if(empty($request->getBodyParam('ObjectCotizar')['cpTo'])){
             $error->message = 'Body de la petición faltante4';
 
             return $error;
         }
 
-        $paisOrigen = CatPaises::find()->where(["uddi"=>$request->getBodyParam('pais_origen')])->one();
-        $paisDestino = CatPaises::find()->where(["uddi"=>$request->getBodyParam('pais_destino')])->one();
+        $from = $request->getBodyParam('ObjectCotizar')['cpFrom'];
+        $to = $request->getBodyParam('ObjectCotizar')['cpTo'];
+        $codeFrom = $request->getBodyParam('ObjectCotizar')['countryCodeFrom'];
+        $codeTo = $request->getBodyParam('ObjectCotizar')['countryCodeTo'];
+        $paquetes = $request->getBodyParam('ObjectCotizar')['paquetes'];
 
         $serviciosMensajeria = new Fedex();
-        $from = $request->getBodyParam('from');
-        $to = $request->getBodyParam('to');
-        
-        $fedex = $serviciosMensajeria->getFedex($from, $to, $paisOrigen->txt_codigo, $paisDestino->txt_codigo);
+        $fedex = $serviciosMensajeria->getFedex($from, $to, $codeFrom, $codeTo);
         $data = array_merge($data, $fedex);
 
-        $estafeta = Estafeta::datosEstafeta($from, $to);
-        
+        $estafeta = Estafeta::datosEstafeta($from, $to, $paquetes);
         $data = array_merge($data, $estafeta);
         EnviosObject::setSessionEnvios($data);
 

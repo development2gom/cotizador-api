@@ -79,4 +79,15 @@ class EntFacturacion extends \yii\db\ActiveRecord
     {
         return $this->hasOne(EntClientes::className(), ['id_cliente' => 'id_cliente']);
     }
+
+    public function fields(){
+        $fields = parent::fields();
+        
+        /**
+         * Se calculan y se regresan en el json de respuesta
+         */
+        $fields[] = 'cliente';
+
+        return $fields;
+    }
 }

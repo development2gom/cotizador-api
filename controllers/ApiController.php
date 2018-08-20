@@ -21,6 +21,7 @@ use app\models\Fedex;
 use app\models\Estafeta;
 use app\models\CatPaises;
 use yii\filters\auth\HttpBearerAuth;
+use app\models\EntFacturacion;
 
 /**
  * ConCategoiriesController implements the CRUD actions for ConCategoiries model.
@@ -84,6 +85,7 @@ class ApiController extends Controller
 
             'update' => ['PUT', 'PATCH'],
             'delete' => ['DELETE'],
+            'datos-facturacion' => ['POST'],
         ];
     }
 
@@ -420,6 +422,9 @@ class ApiController extends Controller
 
     public function actionCrearCliente(){
         $request = Yii::$app->request;
+        
+        $error = new MessageResponse();
+        $error->responseCode = -1;
 
         $model = new EntClientes();
         $model->scenario = "registerInput";
@@ -435,6 +440,28 @@ class ApiController extends Controller
             return $model;
         }else{
             $error->message = 'No hay datos para guardar al cliente';
+
+            return $error;
+        }
+    }
+
+    public function actionDatosFacturacion(){
+        $request = Yii::$app->request;//print_r($request->bodyParams);exit;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        $model = new EntFacturacion();
+
+        if($model->load($request->bodyParams)){
+            if(!$model->save()){
+
+                return $model;
+            }
+
+            return $model;
+        }else{
+            $error->message = 'No hay datos para guardar la factura';
 
             return $error;
         }

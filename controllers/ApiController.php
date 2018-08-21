@@ -425,22 +425,47 @@ class ApiController extends Controller
         $error = new MessageResponse();
         $error->responseCode = -1;
 
-        $model = new EntClientes();
-        $model->scenario = "registerInput";
-
-        if($model->load($request->bodyParams)){
-            $model->uddi = Utils::generateToken();
-
-            if(!$model->save()){
-                
-                return $model;
-            }
-
-            return $model;
-        }else{
-            $error->message = 'No hay datos para guardar al cliente';
+        if(empty($request->getBodyParam('email'))){
+            $error->message = 'Body de la petición faltante1';
 
             return $error;
+        }
+        if(empty($request->getBodyParam('nombre'))){
+            $error->message = 'Body de la petición faltante2';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('uddi'))){
+            $error->message = 'Body de la petición faltante3';
+
+            return $error;
+        }
+
+        $nombre = $request->getBodyParam('nombre');
+        $email = $request->getBodyParam('email');
+        $uddi = $request->getBodyParam('uddi');
+        $apellido = null;
+
+        if(!empty($request->getBodyParam('apellido'))){
+            $apellido = $request->getBodyParam('apellido');
+        }
+
+        $cliente = EntClientes::find()->where(["uddi" => $uddi])->one();
+        if ($cliente) {
+
+            return $cliente;    
+        }else{
+            $cliente = new EntClientes();
+            $cliente->txt_nombre = $nombre;
+            $cliente->txt_correo = $email;
+            $cliente->uddi = $uddi;
+            $cliente->txt_apellido_paterno = $apellido;
+            $cliente->password = "\(^.^)/";
+
+            if($cliente->save()){
+                
+                return $cliente;
+            }
         }
     }
 

@@ -529,6 +529,11 @@ class ApiController extends Controller
 
             return $error;
         }
+        if(empty($request->getBodyParam('original'))){
+            $error->message = 'Body de la petición faltante5';
+
+            return $error;
+        }
         if(empty($request->getBodyParam('cpOrigen'))){
             $error->message = 'Body de la petición faltante6';
 
@@ -551,6 +556,7 @@ class ApiController extends Controller
         $envio->num_cp_origen = $request->getBodyParam('cpOrigen');
         $envio->num_cp_destino = $request->getBodyParam('cpDestino');
         $envio->num_costo_envio = $request->getBodyParam('cliente');
+        $envio->num_subtotal = $request->getBodyParam('original');
 
         if(!$envio->save()){
             return $envio;

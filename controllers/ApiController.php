@@ -22,12 +22,19 @@ use app\models\Estafeta;
 use app\models\CatPaises;
 use yii\filters\auth\HttpBearerAuth;
 use app\models\EntFacturacion;
+use app\models\WrkEnvios;
+use app\models\ResponseServices;
+use app\models\OpenPay;
+use app\models\EntOrdenesCompras;
 
 /**
  * ConCategoiriesController implements the CRUD actions for ConCategoiries model.
  */
 class ApiController extends Controller
 {   
+    const FEDEX = "FEDEX";
+    const ESTAFETA = "Estafeta";
+
     public $enableCsrfValidation = false;
     public $serializer = [
         'class' => 'app\components\SerializerExtends',
@@ -86,6 +93,8 @@ class ApiController extends Controller
             'update' => ['PUT', 'PATCH'],
             'delete' => ['DELETE'],
             'datos-facturacion' => ['POST'],
+            'pagos' => ['POST'],
+            'confirmar-pago' => ['GET', 'HEAD'],
         ];
     }
 
@@ -408,13 +417,13 @@ class ApiController extends Controller
         $codeTo = $request->getBodyParam('ObjectCotizar')['countryCodeTo'];
         $paquetes = $request->getBodyParam('ObjectCotizar')['paquetes'];
 
-        $serviciosMensajeria = new Fedex();
-        $fedex = $serviciosMensajeria->getFedex($from, $to, $codeFrom, $codeTo);
-        $data = array_merge($data, $fedex);
+        // $serviciosMensajeria = new Fedex();
+        // $fedex = $serviciosMensajeria->getFedex($from, $to, $codeFrom, $codeTo);
+        // $data = array_merge($data, $fedex);
 
         $estafeta = Estafeta::datosEstafeta($from, $to, $paquetes);
         $data = array_merge($data, $estafeta);
-        EnviosObject::setSessionEnvios($data);
+        //EnviosObject::setSessionEnvios($data);
 
         return $data;
     }
@@ -489,5 +498,146 @@ class ApiController extends Controller
 
             return $error;
         }
+    }
+
+    public function actionPagos(){
+        $request = Yii::$app->request;
+        //print_r($request->bodyParams);exit;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        if(empty($request->getBodyParam('id'))){
+            $error->message = 'Body de la petición faltante1';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('idDestino'))){
+            $error->message = 'Body de la petición faltante2';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('idOrigen'))){
+            $error->message = 'Body de la petición faltante3';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('mensajeria'))){
+            $error->message = 'Body de la petición faltante4';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('cliente'))){
+            $error->message = 'Body de la petición faltante5';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('original'))){
+            $error->message = 'Body de la petición faltante5';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('cpOrigen'))){
+            $error->message = 'Body de la petición faltante6';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('cpDestino'))){
+            $error->message = 'Body de la petición faltante7';
+
+            return $error;
+        }
+
+        $cliente = EntClientes::find()->where(['uddi'=>$request->getBodyParam('id')])->one();
+
+        $envio = new WrkEnvios();
+        $envio->id_cliente = $cliente->id_cliente;
+        $envio->id_destino = $request->getBodyParam('idDestino');
+        $envio->id_origen = $request->getBodyParam('idOrigen');
+        $envio->id_proveedor = $this->getProveedor($request->getBodyParam('mensajeria'));
+        $envio->uddi = Utils::generateToken("env_");
+        $envio->num_cp_origen = $request->getBodyParam('cpOrigen');
+        $envio->num_cp_destino = $request->getBodyParam('cpDestino');
+        $envio->num_costo_envio = $request->getBodyParam('cliente');
+        $envio->num_subtotal = $request->getBodyParam('original');
+
+        if(!$envio->save()){
+            return $envio;
+        }
+
+        $response = new ResponseServices();
+        $response->status = "success";
+        $response->message = "Envio guardado";
+        $response->result = $envio->uddi;
+
+        return $response;
+    }
+
+    public function getProveedor($proveedor)
+    {
+        if ($proveedor == self::FEDEX) {
+            $proveedor = 1;
+        } else if ($proveedor == self::ESTAFETA) {
+            $proveedor = 2;
+        }
+
+        return $proveedor;
+    }
+
+    public function actionConfirmarPago($token = null)
+    {
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        $envio = WrkEnvios::find()->where(["uddi" => $token])->one();
+        if (!$envio) {
+            $error->message = "No se encontró la orden de envio";
+
+            return $error;
+        }
+        $cliente = $envio->cliente;
+
+        $ordenCompra = new EntOrdenesCompras();
+        $ordenCompra->id_cliente = $cliente->id_cliente;
+        $ordenCompra->txt_descripcion = "Pago es sucursal";
+        $ordenCompra->txt_order_number = Utils::generateToken("oc_");
+        $ordenCompra->b_pagado = 1;
+
+        if($ordenCompra->b_pagado){
+            $ordenCompra->fch_pago = Calendario::getFechaActual();
+        }
+
+        $ordenCompra->fch_creacion = Calendario::getFechaActual();
+        $ordenCompra->num_total = $envio->num_costo_envio;
+        $ordenCompra->num_subtotal = $envio->num_subtotal;
+
+        // if(!$ordenCompra->save()){
+        //     $error->message = "No se guardo la orden de compra";
+
+        //     return $error;
+        // }
+
+        $pagoRecibido = new EntPagosRecibidos();
+        $pagoRecibido->id_cliente = $cliente->id_cliente;
+        $pagoRecibido->id_orden_compra = $ordenCompra->id_orden_compra;
+        $pagoRecibido->txt_monto_pago = (string)$ordenCompra->num_total;
+        $pagoRecibido->fch_pago = $ordenCompra->fch_pago;
+
+        $pagoRecibido->txt_transaccion_local = "Transaccion local";
+        $pagoRecibido->txt_notas = "Pago recibido";
+        $pagoRecibido->txt_estatus = "Pago recibido";
+        $pagoRecibido->txt_transaccion = "Pago recibido en mostrador";
+
+        if(!$pagoRecibido->save()){
+            $error->message = "No se guardo el recibo de pago";
+
+            return $error;
+        }
+
+        $response = new ResponseServices();
+        $response->status = "success";
+        $response->message = "Orden de compra y pago generado correctamente";
+
+        return $response;
     }
 }

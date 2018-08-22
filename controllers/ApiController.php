@@ -24,6 +24,8 @@ use yii\filters\auth\HttpBearerAuth;
 use app\models\EntFacturacion;
 use app\models\WrkEnvios;
 use app\models\ResponseServices;
+use app\models\OpenPay;
+use app\models\EntOrdenesCompras;
 
 /**
  * ConCategoiriesController implements the CRUD actions for ConCategoiries model.
@@ -92,6 +94,7 @@ class ApiController extends Controller
             'delete' => ['DELETE'],
             'datos-facturacion' => ['POST'],
             'pagos' => ['POST'],
+            'confirmar-pago' => ['GET', 'HEAD'],
         ];
     }
 
@@ -561,6 +564,7 @@ class ApiController extends Controller
         if(!$envio->save()){
             return $envio;
         }
+
         $response = new ResponseServices();
         $response->status = "success";
         $response->message = "Envio guardado";
@@ -578,5 +582,62 @@ class ApiController extends Controller
         }
 
         return $proveedor;
+    }
+
+    public function actionConfirmarPago($token = null)
+    {
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        $envio = WrkEnvios::find()->where(["uddi" => $token])->one();
+        if (!$envio) {
+            $error->message = "No se encontró la orden de envio";
+
+            return $error;
+        }
+        $cliente = $envio->cliente;
+
+        $ordenCompra = new EntOrdenesCompras();
+        $ordenCompra->id_cliente = $cliente->id_cliente;
+        $ordenCompra->txt_descripcion = "Pago es sucursal";
+        $ordenCompra->txt_order_number = Utils::generateToken("oc_");
+        $ordenCompra->b_pagado = 1;
+
+        if($ordenCompra->b_pagado){
+            $ordenCompra->fch_pago = Calendario::getFechaActual();
+        }
+
+        $ordenCompra->fch_creacion = Calendario::getFechaActual();
+        $ordenCompra->num_total = $envio->num_costo_envio;
+        $ordenCompra->num_subtotal = $envio->num_subtotal;
+
+        // if(!$ordenCompra->save()){
+        //     $error->message = "No se guardo la orden de compra";
+
+        //     return $error;
+        // }
+
+        $pagoRecibido = new EntPagosRecibidos();
+        $pagoRecibido->id_cliente = $cliente->id_cliente;
+        $pagoRecibido->id_orden_compra = $ordenCompra->id_orden_compra;
+        $pagoRecibido->txt_monto_pago = (string)$ordenCompra->num_total;
+        $pagoRecibido->fch_pago = $ordenCompra->fch_pago;
+
+        $pagoRecibido->txt_transaccion_local = "Transaccion local";
+        $pagoRecibido->txt_notas = "Pago recibido";
+        $pagoRecibido->txt_estatus = "Pago recibido";
+        $pagoRecibido->txt_transaccion = "Pago recibido en mostrador";
+
+        if(!$pagoRecibido->save()){
+            $error->message = "No se guardo el recibo de pago";
+
+            return $error;
+        }
+
+        $response = new ResponseServices();
+        $response->status = "success";
+        $response->message = "Orden de compra y pago generado correctamente";
+
+        return $response;
     }
 }

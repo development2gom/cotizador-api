@@ -22,12 +22,17 @@ use app\models\Estafeta;
 use app\models\CatPaises;
 use yii\filters\auth\HttpBearerAuth;
 use app\models\EntFacturacion;
+use app\models\WrkEnvios;
+use app\models\ResponseServices;
 
 /**
  * ConCategoiriesController implements the CRUD actions for ConCategoiries model.
  */
 class ApiController extends Controller
 {   
+    const FEDEX = "FEDEX";
+    const ESTAFETA = "Estafeta";
+
     public $enableCsrfValidation = false;
     public $serializer = [
         'class' => 'app\components\SerializerExtends',
@@ -86,6 +91,7 @@ class ApiController extends Controller
             'update' => ['PUT', 'PATCH'],
             'delete' => ['DELETE'],
             'datos-facturacion' => ['POST'],
+            'pagos' => ['POST'],
         ];
     }
 
@@ -408,13 +414,13 @@ class ApiController extends Controller
         $codeTo = $request->getBodyParam('ObjectCotizar')['countryCodeTo'];
         $paquetes = $request->getBodyParam('ObjectCotizar')['paquetes'];
 
-        $serviciosMensajeria = new Fedex();
-        $fedex = $serviciosMensajeria->getFedex($from, $to, $codeFrom, $codeTo);
-        $data = array_merge($data, $fedex);
+        // $serviciosMensajeria = new Fedex();
+        // $fedex = $serviciosMensajeria->getFedex($from, $to, $codeFrom, $codeTo);
+        // $data = array_merge($data, $fedex);
 
         $estafeta = Estafeta::datosEstafeta($from, $to, $paquetes);
         $data = array_merge($data, $estafeta);
-        EnviosObject::setSessionEnvios($data);
+        //EnviosObject::setSessionEnvios($data);
 
         return $data;
     }
@@ -489,5 +495,82 @@ class ApiController extends Controller
 
             return $error;
         }
+    }
+
+    public function actionPagos(){
+        $request = Yii::$app->request;
+        //print_r($request->bodyParams);exit;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        if(empty($request->getBodyParam('id'))){
+            $error->message = 'Body de la petición faltante1';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('idDestino'))){
+            $error->message = 'Body de la petición faltante2';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('idOrigen'))){
+            $error->message = 'Body de la petición faltante3';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('mensajeria'))){
+            $error->message = 'Body de la petición faltante4';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('cliente'))){
+            $error->message = 'Body de la petición faltante5';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('cpOrigen'))){
+            $error->message = 'Body de la petición faltante6';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('cpDestino'))){
+            $error->message = 'Body de la petición faltante7';
+
+            return $error;
+        }
+
+        $cliente = EntClientes::find()->where(['uddi'=>$request->getBodyParam('id')])->one();
+
+        $envio = new WrkEnvios();
+        $envio->id_cliente = $cliente->id_cliente;
+        $envio->id_destino = $request->getBodyParam('idDestino');
+        $envio->id_origen = $request->getBodyParam('idOrigen');
+        $envio->id_proveedor = $this->getProveedor($request->getBodyParam('mensajeria'));
+        $envio->uddi = Utils::generateToken("env_");
+        $envio->num_cp_origen = $request->getBodyParam('cpOrigen');
+        $envio->num_cp_destino = $request->getBodyParam('cpDestino');
+        $envio->num_costo_envio = $request->getBodyParam('cliente');
+
+        if(!$envio->save()){
+            return $envio;
+        }
+        $response = new ResponseServices();
+        $response->status = "success";
+        $response->message = "Envio guardado";
+        $response->result = $envio->uddi;
+
+        return $response;
+    }
+
+    public function getProveedor($proveedor)
+    {
+        if ($proveedor == self::FEDEX) {
+            $proveedor = 1;
+        } else if ($proveedor == self::ESTAFETA) {
+            $proveedor = 2;
+        }
+
+        return $proveedor;
     }
 }

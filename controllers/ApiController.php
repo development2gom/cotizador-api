@@ -615,11 +615,11 @@ class ApiController extends Controller
         $ordenCompra->num_total = $envio->num_costo_envio;
         $ordenCompra->num_subtotal = $envio->num_subtotal;
 
-        // if(!$ordenCompra->save()){
-        //     $error->message = "No se guardo la orden de compra";
+        if(!$ordenCompra->save()){
+            $error->message = "No se guardo la orden de compra";
 
-        //     return $error;
-        // }
+            return $error;
+        }
 
         $pagoRecibido = new EntPagosRecibidos();
         $pagoRecibido->id_cliente = $cliente->id_cliente;

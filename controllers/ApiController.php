@@ -26,6 +26,7 @@ use app\models\WrkEnvios;
 use app\models\ResponseServices;
 use app\models\OpenPay;
 use app\models\EntOrdenesCompras;
+use app\models\Pagos;
 
 /**
  * ConCategoiriesController implements the CRUD actions for ConCategoiries model.
@@ -626,7 +627,7 @@ class ApiController extends Controller
         $pagoRecibido->txt_transaccion_local = "Transaccion local";
         $pagoRecibido->txt_notas = "Pago recibido";
         $pagoRecibido->txt_estatus = "Pago recibido";
-        $pagoRecibido->txt_transaccion = "Pago recibido en mostrador";
+        $pagoRecibido->txt_transaccion = Utils::generateToken("tr_");
 
         if(!$pagoRecibido->save()){
             $error->message = "No se guardo el recibo de pago";
@@ -637,7 +638,86 @@ class ApiController extends Controller
         $response = new ResponseServices();
         $response->status = "success";
         $response->message = "Orden de compra y pago generado correctamente";
+        $response->data = $pagoRecibido;
 
         return $response;
     }
+
+    public function actionGenerarFactura(){
+        $request = Yii::$app->request;
+
+		$error = new MessageResponse();
+        $error->responseCode = -1;
+		$botones = "";
+
+        if(empty($request->getBodyParam('transacciones'))){
+            $error->message = 'Body de la petición faltante';
+
+            return $error;
+        }
+
+        // Datos de facturación
+        if(empty($request->getBodyParam('id_cliente'))){
+            $error->message = 'Body de la petición faltante5';
+
+            return $error;
+        }
+
+        $botonesArray = [];
+        $i = 0;
+        foreach($request->getBodyParam('transacciones') as $transaccion){
+            $i++;
+            $ordenPagada = EntPagosRecibidos::find()->where(["txt_transaccion"=>$transaccion])->one();
+            $botones = '<a class="btn donaciones-facturar-pdf js-descargar-pdf" target="_blank" href='.Url::base().'/api/descargar-factura-pdf?token='.$transaccion.'>PDF</a> 
+            <a href='.Url::base().'/api/descargar-factura-xml?token='.$transaccion.' target="_blank" class="btn donaciones-facturar-xml js-descargar-xml">XML</a>';
+
+            if(!$ordenPagada){
+                $botonesArray[$i] = null;continue;
+            }
+
+            if($ordenPagada->b_facturado){
+                $botonesArray[$i] = $botones;continue;
+            }
+
+            $id_cliente = $request->getBodyParam('id_cliente');
+            $cliente = EntClientes::find()->where(['id_cliente'=>$id_cliente])->one();
+
+            $facturacion = EntFacturacion::find()->where(["id_cliente"=>$cliente->id_cliente])->one();
+            if(!$facturacion){
+                $facturacion = new EntFacturacion();
+            }
+                
+            $factura = new Pagos();
+            $facturaGenerar = $factura->generarFactura($facturacion, $ordenPagada);
+            
+            if(isset($facturaGenerar->pdf) && isset($facturaGenerar->xml)){
+                
+                $this->validarDirectorio("facturas/".$cliente->uddi);
+                $this->validarDirectorio("facturas/".$cliente->uddi."/".$transaccion);
+
+                $pdf = base64_decode($facturaGenerar->pdf);
+
+                $xml = base64_decode($facturaGenerar->xml);
+
+                file_put_contents("facturas/".$cliente->uddi."/".$transaccion."/factura.pdf", $pdf);
+                file_put_contents("facturas/".$cliente->uddi."/".$transaccion."/factura.xml", $xml);
+
+                $ordenPagada->b_facturado = 1;
+                $ordenPagada->save();
+                
+                $botonesArray[$i] = $botones;continue;
+            }
+
+            if(isset($facturaGenerar->error) && $facturaGenerar->error){
+                $botonesArray[$i] = null;continue;
+            }
+        }
+        return $botonesArray;
+    }
+    
+    public function validarDirectorio($path){
+		if(!file_exists($path)){
+			mkdir($path, 0777);
+		}
+	}
 }

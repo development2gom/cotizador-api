@@ -96,6 +96,9 @@ class ApiController extends Controller
             'datos-facturacion' => ['POST'],
             'pagos' => ['POST'],
             'confirmar-pago' => ['GET', 'HEAD'],
+            'generar-factura' => ['POST'],
+            'descargar-factura-pdf' => ['GET', 'HEAD'],
+            'descargar-factura-xml' => ['GET', 'HEAD']
         ];
     }
 
@@ -718,6 +721,36 @@ class ApiController extends Controller
     public function validarDirectorio($path){
 		if(!file_exists($path)){
 			mkdir($path, 0777);
+		}
+    }
+    
+    public function actionDescargarFacturaPdf($token=null){
+        $ordenPagada = EntPagosRecibidos::find()->where(["txt_transaccion"=>$token])->one();
+        if(!$ordenPagada){
+            return;
+        }
+        $usuario = $ordenPagada->cliente;
+
+		$file = "facturas/".$usuario->uddi."/".$ordenPagada->txt_transaccion."/factura.pdf";
+
+		if (file_exists($file)) {
+			
+			return Yii::$app->response->sendFile($file);
+		}
+	}
+
+	public function actionDescargarFacturaXml($token=null){
+        $ordenPagada = EntPagosRecibidos::find()->where(["txt_transaccion"=>$token])->one();
+        if(!$ordenPagada){
+            return;
+        }
+        $usuario = $ordenPagada->cliente;
+
+		$file = "facturas/".$usuario->uddi."/".$ordenPagada->txt_transaccion."/factura.xml";
+
+		if (file_exists($file)) {
+			
+			return Yii::$app->response->sendFile($file);
 		}
 	}
 }

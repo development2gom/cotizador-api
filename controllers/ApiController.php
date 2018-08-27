@@ -647,7 +647,7 @@ class ApiController extends Controller
     }
 
     public function actionGenerarFactura(){
-        $request = Yii::$app->request;
+        $request = Yii::$app->request;//print_r($request->getBodyParam('transacciones'));exit;
 
 		$error = new MessageResponse();
         $error->responseCode = -1;
@@ -668,7 +668,8 @@ class ApiController extends Controller
 
         $botonesArray = [];
         $i = 0;
-        foreach($request->getBodyParam('transacciones') as $transaccion){
+        $transaccionesArray = explode(',', $request->getBodyParam('transacciones'));
+        foreach($transaccionesArray as $transaccion){
             $i++;
             $ordenPagada = EntPagosRecibidos::find()->where(["txt_transaccion"=>$transaccion])->one();
             $botones = '<a class="btn donaciones-facturar-pdf js-descargar-pdf" target="_blank" href='.Url::base().'/api/descargar-factura-pdf?token='.$transaccion.'>PDF</a> 
@@ -683,11 +684,23 @@ class ApiController extends Controller
             }
 
             $id_cliente = $request->getBodyParam('id_cliente');
+            $id_factura = 0;
+            if($request->getBodyParam('id_factura')){
+                $id_factura = $request->getBodyParam('id_factura');
+            }
             $cliente = EntClientes::find()->where(['id_cliente'=>$id_cliente])->one();
 
-            $facturacion = EntFacturacion::find()->where(["id_cliente"=>$cliente->id_cliente])->one();
+            $facturacion = EntFacturacion::find()->where(["id_factura"=>$id_factura, "id_cliente"=>$cliente->id_cliente])->one();
             if(!$facturacion){
                 $facturacion = new EntFacturacion();
+                $facturacion->id_cliente = $id_cliente;
+
+                if($facturacion->load($request->bodyParams)){
+                    if(!$facturacion->save()){
+        
+                        return $facturacion;
+                    }
+                }
             }
                 
             $factura = new Pagos();

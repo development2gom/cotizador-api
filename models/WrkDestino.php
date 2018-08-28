@@ -45,7 +45,7 @@ class WrkDestino extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['txt_nombre', 'txt_pais', 'txt_calle', 'num_codigo_postal', 'txt_colonia', 'id_cliente', 'txt_nombre_ubicacion'], 'required'],
+            [['txt_nombre', 'txt_pais', 'txt_calle', 'num_codigo_postal', 'txt_colonia', 'id_cliente'], 'required'],
             [['num_codigo_postal', 'num_telefono', 'num_telefono_movil', 'num_exterior', 'num_interior', 'id_cliente', 'b_habilitado'], 'integer'],
             [['txt_nombre'], 'string', 'max' => 100],
             [['txt_pais', 'txt_calle', 'txt_estado', 'txt_municipio', 'txt_colonia', 'txt_correo', 'txt_nombre_ubicacion', 'txt_empresa', 'txt_puesto'], 'string', 'max' => 50],

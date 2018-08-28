@@ -94,11 +94,15 @@ class ApiController extends Controller
             'update' => ['PUT', 'PATCH'],
             'delete' => ['DELETE'],
             'datos-facturacion' => ['POST'],
+            'guardar-facturacion' => ['POST'],
             'pagos' => ['POST'],
             'confirmar-pago' => ['GET', 'HEAD'],
             'generar-factura' => ['POST'],
             'descargar-factura-pdf' => ['GET', 'HEAD'],
-            'descargar-factura-xml' => ['GET', 'HEAD']
+            'descargar-factura-xml' => ['GET', 'HEAD'],
+            'get-buscar-origen' => ['POST'],
+            'get-buscar-destino' => ['POST'],
+            'get-buscar-facturacion' => ['POST']
         ];
     }
 
@@ -482,26 +486,56 @@ class ApiController extends Controller
         }
     }
 
-    public function actionDatosFacturacion(){
-        $request = Yii::$app->request;//print_r($request->bodyParams);exit;
+    public function actionGuardarFacturacion(){
+        $request = Yii::$app->request;
 
         $error = new MessageResponse();
         $error->responseCode = -1;
 
-        $model = new EntFacturacion();
-
-        if($model->load($request->bodyParams)){
-            if(!$model->save()){
-
-                return $model;
-            }
-
-            return $model;
-        }else{
-            $error->message = 'No hay datos para guardar la factura';
+        if(empty($request->getBodyParam('idCliente'))){
+            $error->message = "Faltan datos";
 
             return $error;
         }
+
+        $uddi_cliente = $request->getBodyParam('idCliente');
+        $cliente = EntClientes::find()->where(['uddi'=>$uddi_cliente])->one();
+
+        if($cliente){
+            $model = null;
+            if(empty($request->getBodyParam('id'))){
+                $model = new EntFacturacion();
+            }else{
+                $id_factura = $request->getBodyParam('id');
+                $model = EntFacturacion::find()->where(['id_factura'=>$id_factura])->one();
+            }
+            
+            if($model){
+                parse_str( $request->getBodyParam('data'), $new_data);
+                if($model->load($new_data)){
+                    $model->id_cliente = $cliente->id_cliente;
+                    if(!$model->save()){
+
+                        return $model;
+                    }
+
+                    $response = new ResponseServices();
+                    $response->status = "success";
+                    $response->message = "Envio guardado";
+                    $response->result = $model;
+
+                    return $response;
+                }else{
+                    $error->message = 'No hay datos para guardar la factura';
+                }
+            }else{
+                $error->message = "No existe el registro";
+            }
+        }else{
+            $error->message = "No existe el cliente";
+        }
+
+        return $error;
     }
 
     public function actionPagos(){
@@ -553,28 +587,57 @@ class ApiController extends Controller
         }
 
         $cliente = EntClientes::find()->where(['uddi'=>$request->getBodyParam('id')])->one();
+        $origen = new WrkOrigen();
+        $destino = new WrkDestino();
 
-        $envio = new WrkEnvios();
-        $envio->id_cliente = $cliente->id_cliente;
-        $envio->id_destino = $request->getBodyParam('idDestino');
-        $envio->id_origen = $request->getBodyParam('idOrigen');
-        $envio->id_proveedor = $this->getProveedor($request->getBodyParam('mensajeria'));
-        $envio->uddi = Utils::generateToken("env_");
-        $envio->num_cp_origen = $request->getBodyParam('cpOrigen');
-        $envio->num_cp_destino = $request->getBodyParam('cpDestino');
-        $envio->num_costo_envio = $request->getBodyParam('cliente');
-        $envio->num_subtotal = $request->getBodyParam('original');
 
-        if(!$envio->save()){
-            return $envio;
+
+        $params = $request->bodyParams;
+        parse_str($params['idOrigen'],$new_data);
+        parse_str($params['idDestino'],$new_data2);
+
+        $transaction = Yii::$app->db->beginTransaction();
+        try{
+            if($origen->load($new_data) && $destino->load($new_data2)){
+                $origen->id_cliente = $cliente->id_cliente;
+                $destino->id_cliente = $cliente->id_cliente;
+
+                if($origen->save() && $destino->save()){
+                    $envio = new WrkEnvios();
+                    $envio->id_cliente = $cliente->id_cliente;
+                    $envio->id_destino = $destino->id_destino;
+                    $envio->id_origen = $origen->id_origen;
+                    $envio->id_proveedor = $this->getProveedor($request->getBodyParam('mensajeria'));
+                    $envio->uddi = Utils::generateToken("env_");
+                    $envio->num_cp_origen = $request->getBodyParam('cpOrigen');
+                    $envio->num_cp_destino = $request->getBodyParam('cpDestino');
+                    $envio->num_costo_envio = $request->getBodyParam('cliente');
+                    $envio->num_subtotal = $request->getBodyParam('original');
+
+                    if(!$envio->save()){
+                        $transaction->rollBack();
+                    }
+
+                    $transaction->commit();
+
+                    $response = new ResponseServices();
+                    $response->status = "success";
+                    $response->message = "Envio guardado";
+                    $response->result = $envio;
+
+                    return $response;
+                }else{
+                    print_r($origen->errors);
+                    print_r($destino->errors);
+                    $transaction->rollBack();
+                }
+            }echo "fuera";exit;
+        }catch (\Exception $e) {
+            $transaction->rollBack();
+            throw $e;
         }
 
-        $response = new ResponseServices();
-        $response->status = "success";
-        $response->message = "Envio guardado";
-        $response->result = $envio->uddi;
-
-        return $response;
+        return $error;
     }
 
     public function getProveedor($proveedor)
@@ -771,5 +834,132 @@ class ApiController extends Controller
 			
 			return Yii::$app->response->sendFile($file);
 		}
-	}
+    }
+    
+    public function actionGetBuscarOrigen(){
+        $request = Yii::$app->request;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        if(empty($request->getBodyParam('id_envio'))){
+            $error->message = 'Body de la petición faltante1';
+
+            return $error;
+        }
+
+        $id_envio = $request->getBodyParam('id_envio');
+
+        $response = new ResponseServices();
+        $origen = WrkOrigen::find()-> Where(['id_origen'=>$id_envio])->one();
+
+        if($origen){
+            $response->message = 'Se encontro el resgistro';
+            $response->status = 'success';
+            $response->result = $origen;
+        }
+        else{
+            $response->message='No se encontro nada';
+        }   
+       
+        return $response;
+    }
+
+    public function actionGetBuscarDestino(){
+        $request = Yii::$app->request;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+        
+        if(empty($request->getBodyParam('id_envio'))){
+            $error->message = 'Body de la petición faltante1';
+
+            return $error;
+        }
+
+        $id_envio = $request->getBodyParam('id_envio');
+
+        $response = new ResponseServices();
+        $destino = WrkDestino::find()-> Where(['id_destino'=>$id_envio])->one();
+
+        if($destino){
+            $response->message = 'Se encontro el resgistro';
+            $response->status = 'success';
+            $response->result = $destino;
+        }
+        else{
+            $response->message='No se encontro nada';
+        }   
+       
+        return $response;
+    }
+
+    public function actionDatosFacturacion(){
+        $request = Yii::$app->request;
+        // $request->getBodyParam('uddi_cliente');
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        if(empty($request->getBodyParam('depdrop_all_params')['search-cliente'])){
+            $error->message = 'Body de la petición faltante';
+
+            return $error;
+        }
+
+        //verifica que los parámetros solicitados se encuentren
+        $uddi_cliente = $request->getBodyParam('depdrop_all_params')['search-cliente'];
+
+        $cliente = EntClientes::find()->where(['uddi'=>$uddi_cliente])->one();
+        
+        if(!$cliente){
+            $error->message = 'El cliente no se encontro';
+            
+            return $error;
+        }
+
+        $datos = EntFacturacion::find()->where(['id_cliente'=>$cliente->id_cliente, 'b_habilitado'=>1])->all();  
+         
+        $selected = '';
+        $out = [];
+        foreach ($datos as $i => $dato) {
+            $out[] = [
+                'id' => $dato->id_factura, 
+                'name' => $dato->txt_rfc];
+            if ($i == 0) {
+                $selected = null;
+            }
+        }
+        // Shows how you can preselect a value
+        return ['output' => $out, 'selected'=>$selected];
+    }
+
+    public function actionGetBuscarFacturacion(){
+        $request = Yii::$app->request;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+        
+        if(empty($request->getBodyParam('id_factura'))){
+            $error->message = 'Body de la petición faltante1';
+
+            return $error;
+        }
+
+        $id_factura = $request->getBodyParam('id_factura');
+
+        $response = new ResponseServices();
+        $datos = EntFacturacion::find()-> Where(['id_factura'=>$id_factura])->one();
+
+        if($datos){
+            $response->message = 'Se encontro el resgistro';
+            $response->status = 'success';
+            $response->result = $datos;
+        }
+        else{
+            $response->message='No se encontro nada';
+        }   
+       
+        return $response;
+    }
 }

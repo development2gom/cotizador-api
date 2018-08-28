@@ -98,7 +98,9 @@ class ApiController extends Controller
             'confirmar-pago' => ['GET', 'HEAD'],
             'generar-factura' => ['POST'],
             'descargar-factura-pdf' => ['GET', 'HEAD'],
-            'descargar-factura-xml' => ['GET', 'HEAD']
+            'descargar-factura-xml' => ['GET', 'HEAD'],
+            'get-buscar-origen' => ['POST'],
+            'get-buscar-destino' => ['POST']
         ];
     }
 
@@ -771,5 +773,63 @@ class ApiController extends Controller
 			
 			return Yii::$app->response->sendFile($file);
 		}
-	}
+    }
+    
+    public function actionGetBuscarOrigen(){
+        $request = Yii::$app->request;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        if(empty($request->getBodyParam('id_envio'))){
+            $error->message = 'Body de la petición faltante1';
+
+            return $error;
+        }
+
+        $id_envio = $request->getBodyParam('id_envio');
+
+        $response = new ResponseServices();
+        $origen = WrkOrigen::find()-> Where(['id_origen'=>$id_envio])->one();
+
+        if($origen){
+            $response->message = 'Se encontro el resgistro';
+            $response->status = 'success';
+            $response->result = $origen;
+        }
+        else{
+            $response->message='No se encontro nada';
+        }   
+       
+        return $response;
+    }
+
+    public function actionGetBuscarDestino(){
+        $request = Yii::$app->request;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+        
+        if(empty($request->getBodyParam('id_envio'))){
+            $error->message = 'Body de la petición faltante1';
+
+            return $error;
+        }
+
+        $id_envio = $request->getBodyParam('id_envio');
+
+        $response = new ResponseServices();
+        $destino = WrkDestino::find()-> Where(['id_destino'=>$id_envio])->one();
+
+        if($destino){
+            $response->message = 'Se encontro el resgistro';
+            $response->status = 'success';
+            $response->result = $destino;
+        }
+        else{
+            $response->message='No se encontro nada';
+        }   
+       
+        return $response;
+    }
 }

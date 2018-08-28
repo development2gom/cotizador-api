@@ -555,28 +555,57 @@ class ApiController extends Controller
         }
 
         $cliente = EntClientes::find()->where(['uddi'=>$request->getBodyParam('id')])->one();
+        $origen = new WrkOrigen();
+        $destino = new WrkDestino();
 
-        $envio = new WrkEnvios();
-        $envio->id_cliente = $cliente->id_cliente;
-        $envio->id_destino = $request->getBodyParam('idDestino');
-        $envio->id_origen = $request->getBodyParam('idOrigen');
-        $envio->id_proveedor = $this->getProveedor($request->getBodyParam('mensajeria'));
-        $envio->uddi = Utils::generateToken("env_");
-        $envio->num_cp_origen = $request->getBodyParam('cpOrigen');
-        $envio->num_cp_destino = $request->getBodyParam('cpDestino');
-        $envio->num_costo_envio = $request->getBodyParam('cliente');
-        $envio->num_subtotal = $request->getBodyParam('original');
 
-        if(!$envio->save()){
-            return $envio;
+
+        $params = $request->bodyParams;
+        parse_str($params['idOrigen'],$new_data);
+        parse_str($params['idDestino'],$new_data2);
+
+        $transaction = Yii::$app->db->beginTransaction();
+        try{
+            if($origen->load($new_data) && $destino->load($new_data2)){
+                $origen->id_cliente = $cliente->id_cliente;
+                $destino->id_cliente = $cliente->id_cliente;
+
+                if($origen->save() && $destino->save()){
+                    $envio = new WrkEnvios();
+                    $envio->id_cliente = $cliente->id_cliente;
+                    $envio->id_destino = $destino->id_destino;
+                    $envio->id_origen = $origen->id_origen;
+                    $envio->id_proveedor = $this->getProveedor($request->getBodyParam('mensajeria'));
+                    $envio->uddi = Utils::generateToken("env_");
+                    $envio->num_cp_origen = $request->getBodyParam('cpOrigen');
+                    $envio->num_cp_destino = $request->getBodyParam('cpDestino');
+                    $envio->num_costo_envio = $request->getBodyParam('cliente');
+                    $envio->num_subtotal = $request->getBodyParam('original');
+
+                    if(!$envio->save()){
+                        $transaction->rollBack();
+                    }
+
+                    $transaction->commit();
+
+                    $response = new ResponseServices();
+                    $response->status = "success";
+                    $response->message = "Envio guardado";
+                    $response->result = $envio;
+
+                    return $response;
+                }else{
+                    print_r($origen->errors);
+                    print_r($destino->errors);
+                    $transaction->rollBack();
+                }
+            }echo "fuera";exit;
+        }catch (\Exception $e) {
+            $transaction->rollBack();
+            throw $e;
         }
 
-        $response = new ResponseServices();
-        $response->status = "success";
-        $response->message = "Envio guardado";
-        $response->result = $envio->uddi;
-
-        return $response;
+        return $error;
     }
 
     public function getProveedor($proveedor)

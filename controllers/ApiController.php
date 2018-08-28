@@ -728,7 +728,13 @@ class ApiController extends Controller
                 $botonesArray[$i] = null;continue;
             }
         }
-        return $botonesArray;
+
+        $response = new ResponseServices();
+        $response->status = "success";
+        $response->message = "Factura generada correctamente";
+        $response->data = $botonesArray;
+
+        return $response;
     }
     
     public function validarDirectorio($path){

@@ -102,7 +102,8 @@ class ApiController extends Controller
             'descargar-factura-xml' => ['GET', 'HEAD'],
             'get-buscar-origen' => ['POST'],
             'get-buscar-destino' => ['POST'],
-            'get-buscar-facturacion' => ['POST']
+            'get-buscar-facturacion' => ['POST'],
+            'get-pagos-usuarios' => ['GET', 'HEAD']
         ];
     }
 
@@ -998,5 +999,34 @@ class ApiController extends Controller
         }   
        
         return $response;
+    }
+
+    public function actionGetPagosUsuarios($uddi = null){
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        if($uddi){
+            $cliente = EntClientes::find()->where(['uddi'=>$uddi])->one();
+            if($cliente){
+                $pagos = EntPagosRecibidos::find()->where(['id_cliente'=>$cliente->id_cliente, 'b_facturado'=>0])->all();
+
+                if($pagos){
+                    $response = new ResponseServices();
+                    $response->status = "success";
+                    $response->message = "Se han realizado pagos";
+                    $response->result = $pagos;
+
+                    return $response;
+                }else{
+                    $response = new ResponseServices();
+                    $response->status = "sinDatos";
+                    $response->message = "No se han realizado pagos";
+
+                    return $response;
+                }
+            }
+        }
+
+        return $uddi;
     }
 }

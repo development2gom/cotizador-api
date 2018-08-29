@@ -102,7 +102,8 @@ class ApiController extends Controller
             'descargar-factura-xml' => ['GET', 'HEAD'],
             'get-buscar-origen' => ['POST'],
             'get-buscar-destino' => ['POST'],
-            'get-buscar-facturacion' => ['POST']
+            'get-buscar-facturacion' => ['POST'],
+            'get-pagos-usuarios' => ['GET', 'HEAD']
         ];
     }
 
@@ -590,8 +591,6 @@ class ApiController extends Controller
         $origen = new WrkOrigen();
         $destino = new WrkDestino();
 
-
-
         $params = $request->bodyParams;
         parse_str($params['idOrigen'],$new_data);
         parse_str($params['idDestino'],$new_data2);
@@ -616,6 +615,45 @@ class ApiController extends Controller
 
                     if(!$envio->save()){
                         $transaction->rollBack();
+                    }
+
+                    $ordenCompra = new EntOrdenesCompras();
+                    $ordenCompra->id_cliente = $cliente->id_cliente;
+                    $ordenCompra->txt_descripcion = "Pago es sucursal";
+                    $ordenCompra->txt_order_number = Utils::generateToken("oc_");
+                    $ordenCompra->b_pagado = 1;
+
+                    if($ordenCompra->b_pagado){
+                        $ordenCompra->fch_pago = Calendario::getFechaActual();
+                    }
+
+                    $ordenCompra->fch_creacion = Calendario::getFechaActual();
+                    $ordenCompra->num_total = $envio->num_costo_envio;
+                    $ordenCompra->num_subtotal = $envio->num_subtotal;
+
+                    if(!$ordenCompra->save()){
+                        $transaction->rollBack();
+                        $error->message = "No se guardo la orden de compra";
+
+                        return $error;
+                    }
+
+                    $pagoRecibido = new EntPagosRecibidos();
+                    $pagoRecibido->id_cliente = $cliente->id_cliente;
+                    $pagoRecibido->id_orden_compra = $ordenCompra->id_orden_compra;
+                    $pagoRecibido->txt_monto_pago = (string)$ordenCompra->num_total;
+                    $pagoRecibido->fch_pago = $ordenCompra->fch_pago;
+
+                    $pagoRecibido->txt_transaccion_local = "Transaccion local";
+                    $pagoRecibido->txt_notas = "Pago recibido";
+                    $pagoRecibido->txt_estatus = "Pago recibido";
+                    $pagoRecibido->txt_transaccion = Utils::generateToken("tr_");
+
+                    if(!$pagoRecibido->save()){
+                        $transaction->rollBack();
+                        $error->message = "No se guardo el recibo de pago";
+
+                        return $error;
                     }
 
                     $transaction->commit();
@@ -961,5 +999,34 @@ class ApiController extends Controller
         }   
        
         return $response;
+    }
+
+    public function actionGetPagosUsuarios($uddi = null){
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        if($uddi){
+            $cliente = EntClientes::find()->where(['uddi'=>$uddi])->one();
+            if($cliente){
+                $pagos = EntPagosRecibidos::find()->where(['id_cliente'=>$cliente->id_cliente, 'b_facturado'=>0])->all();
+
+                if($pagos){
+                    $response = new ResponseServices();
+                    $response->status = "success";
+                    $response->message = "Se han realizado pagos";
+                    $response->result = $pagos;
+
+                    return $response;
+                }else{
+                    $response = new ResponseServices();
+                    $response->status = "sinDatos";
+                    $response->message = "No se han realizado pagos";
+
+                    return $response;
+                }
+            }
+        }
+
+        return $uddi;
     }
 }

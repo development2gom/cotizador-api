@@ -590,8 +590,6 @@ class ApiController extends Controller
         $origen = new WrkOrigen();
         $destino = new WrkDestino();
 
-
-
         $params = $request->bodyParams;
         parse_str($params['idOrigen'],$new_data);
         parse_str($params['idDestino'],$new_data2);
@@ -616,6 +614,45 @@ class ApiController extends Controller
 
                     if(!$envio->save()){
                         $transaction->rollBack();
+                    }
+
+                    $ordenCompra = new EntOrdenesCompras();
+                    $ordenCompra->id_cliente = $cliente->id_cliente;
+                    $ordenCompra->txt_descripcion = "Pago es sucursal";
+                    $ordenCompra->txt_order_number = Utils::generateToken("oc_");
+                    $ordenCompra->b_pagado = 1;
+
+                    if($ordenCompra->b_pagado){
+                        $ordenCompra->fch_pago = Calendario::getFechaActual();
+                    }
+
+                    $ordenCompra->fch_creacion = Calendario::getFechaActual();
+                    $ordenCompra->num_total = $envio->num_costo_envio;
+                    $ordenCompra->num_subtotal = $envio->num_subtotal;
+
+                    if(!$ordenCompra->save()){
+                        $transaction->rollBack();
+                        $error->message = "No se guardo la orden de compra";
+
+                        return $error;
+                    }
+
+                    $pagoRecibido = new EntPagosRecibidos();
+                    $pagoRecibido->id_cliente = $cliente->id_cliente;
+                    $pagoRecibido->id_orden_compra = $ordenCompra->id_orden_compra;
+                    $pagoRecibido->txt_monto_pago = (string)$ordenCompra->num_total;
+                    $pagoRecibido->fch_pago = $ordenCompra->fch_pago;
+
+                    $pagoRecibido->txt_transaccion_local = "Transaccion local";
+                    $pagoRecibido->txt_notas = "Pago recibido";
+                    $pagoRecibido->txt_estatus = "Pago recibido";
+                    $pagoRecibido->txt_transaccion = Utils::generateToken("tr_");
+
+                    if(!$pagoRecibido->save()){
+                        $transaction->rollBack();
+                        $error->message = "No se guardo el recibo de pago";
+
+                        return $error;
                     }
 
                     $transaction->commit();

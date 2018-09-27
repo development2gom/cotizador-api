@@ -426,12 +426,12 @@ class ApiController extends Controller
         $codeTo = $request->getBodyParam('ObjectCotizar')['countryCodeTo'];
         $paquetes = $request->getBodyParam('ObjectCotizar')['paquetes'];
 
-        // $serviciosMensajeria = new Fedex();
-        // $fedex = $serviciosMensajeria->getFedex($from, $to, $codeFrom, $codeTo);
-        // $data = array_merge($data, $fedex);
+        $serviciosMensajeria = new Fedex();
+        $fedex = $serviciosMensajeria->getFedex($from, $to, $codeFrom, $codeTo);
+        $data = array_merge($data, $fedex);
 
-        $estafeta = Estafeta::datosEstafeta($from, $to, $paquetes);
-        $data = array_merge($data, $estafeta);
+        // $estafeta = Estafeta::datosEstafeta($from, $to, $paquetes);
+        // $data = array_merge($data, $estafeta);
         //EnviosObject::setSessionEnvios($data);
 
         return $data;

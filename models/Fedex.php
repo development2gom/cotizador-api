@@ -53,6 +53,7 @@ class Fedex
         $curl = curl_init();
        // $params = [];
         $params["ship_date"] = $date;
+        $params["service_packing"] = "YOUR_PACKAGING";
         $params["shiper"]["postal_code"] = $from;
         $params["shiper"]["country_code"] = $countryCodeFrom;
         $params["recipient"]["country_code"] = $countryCodeTo;
@@ -201,7 +202,7 @@ class Fedex
         $fecha = Utils::changeFormatDateInputShort(Calendario::getFechaActual());
         $opcionesEnvio = $this->validarDisponibilidad($fecha, $from, $to, $countryCodeFrom, $countryCodeTo);
 
-        
+        //print_r($opcionesEnvio);exit;
         foreach ($opcionesEnvio->data->options as $opciones) {
             $costo = $this->getCosto($opciones->Service, $from, $to, $countryCodeFrom, $countryCodeTo);
 
@@ -215,6 +216,8 @@ class Fedex
                 $eo->tipoEnvio = $costo->RateReplyDetails->ServiceType;
                 $eo->urlImagen = Url::base()."/webAssets/images/fedex.png";
                 $data[] = $eo;
+            }else{
+                print_r($costo);
             }
 
         }

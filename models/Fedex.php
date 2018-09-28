@@ -53,6 +53,7 @@ class Fedex
         $curl = curl_init();
        // $params = [];
         $params["ship_date"] = $date;
+        $params["service_packing"] = "YOUR_PACKAGING";
         $params["shiper"]["postal_code"] = $from;
         $params["shiper"]["country_code"] = $countryCodeFrom;
         $params["recipient"]["country_code"] = $countryCodeTo;
@@ -123,7 +124,7 @@ class Fedex
             ),
         ));
 
-        $response = curl_exec($curl);
+        $response = curl_exec($curl);//print_r($response);exit;
         $err = curl_error($curl);
 
         curl_close($curl);
@@ -176,7 +177,7 @@ class Fedex
             CURLOPT_TIMEOUT => 30,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => "POST",
-            CURLOPT_POSTFIELDS => "{\n  \"service_type\": \"FEDEX_EXPRESS_SAVER\",\n    \"service_packing\": \"YOUR_PACKAGING\",\n  \"shiper\":{\n    \"postal_code\":\"53240\",\n    \"country_code\":\"MX\",\n    \"city\":\"mexico\",\n    \"state_code\":\"EM\",\n    \"person_name\":\"Alberto Farías\",\n    \"phone_number\":\"12345678\",\n    \"address_line\":\"Circunvalacion pte 16 CD brisa naucalpan\",\n    \"company_name\":\"2gom\"\n  },\n  \"recipient\":{\n    \"postal_code\":\"08500\",\n    \"country_code\":\"MX\",\n    \"city\":\"mexico\",\n    \"state_code\":\"DF\",\n    \"person_name\":\"Alfredo Elizondo\",\n    \"phone_number\":\"123456789\",\n    \"address_line\":\"Juan Pestalozi 1234 casa 4 benito juarez\",\n    \"company_name\":\"2 geeks one monkey\"\n  },\n  \"package\":{\n    \"peso_kg\":2, \n    \"largo_cm\":20,\n    \"ancho_cm\":20,\n    \"alto_cm\":10\n  }\n}",
+            CURLOPT_POSTFIELDS => json_encode($params),
             CURLOPT_HTTPHEADER => array(
                 "Cache-Control: no-cache",
                 "Content-Type: application/json"
@@ -201,7 +202,7 @@ class Fedex
         $fecha = Utils::changeFormatDateInputShort(Calendario::getFechaActual());
         $opcionesEnvio = $this->validarDisponibilidad($fecha, $from, $to, $countryCodeFrom, $countryCodeTo);
 
-        
+        //print_r($opcionesEnvio);exit;
         foreach ($opcionesEnvio->data->options as $opciones) {
             $costo = $this->getCosto($opciones->Service, $from, $to, $countryCodeFrom, $countryCodeTo);
 
@@ -210,11 +211,14 @@ class Fedex
                 $eo->cpOrigen = $from;
                 $eo->cpDestino = $to;
                 $eo->precioOriginal = $costo->RateReplyDetails->RatedShipmentDetails[1]->ShipmentRateDetail->TotalNetCharge->Amount;
+                $eo->precioCliente = $costo->RateReplyDetails->RatedShipmentDetails[1]->ShipmentRateDetail->TotalNetCharge->Amount;
                 $eo->mensajeria = "FEDEX";
                 $eo->fechaEntrega = Calendario::getDateComplete($costo->RateReplyDetails->CommitDetails->CommitTimestamp);
                 $eo->tipoEnvio = $costo->RateReplyDetails->ServiceType;
                 $eo->urlImagen = Url::base()."/webAssets/images/fedex.png";
                 $data[] = $eo;
+            }else{
+                print_r($costo);
             }
 
         }

@@ -47,6 +47,7 @@ class WrkEnvios extends \yii\db\ActiveRecord
             [['id_cliente'], 'required'],
             [['num_costo_envio', 'num_impuesto', 'num_subtotal'], 'number'],
             [['uddi'], 'string', 'max' => 100],
+            [['txt_folio', 'txt_tipo'], 'string', 'max' => 50],
             [['uddi'], 'unique'],
             [['id_cliente'], 'exist', 'skipOnError' => true, 'targetClass' => EntClientes::className(), 'targetAttribute' => ['id_cliente' => 'id_cliente']],
             [['id_destino'], 'exist', 'skipOnError' => true, 'targetClass' => WrkDestino::className(), 'targetAttribute' => ['id_destino' => 'id_destino']],

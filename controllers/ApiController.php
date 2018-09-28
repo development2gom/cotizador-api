@@ -1116,19 +1116,20 @@ class ApiController extends Controller
 
             $file = base64_encode($response->CompletedShipmentDetail->CompletedPackageDetails->Label->Parts->Image);
 
-            $decoded = base64_decode($file);
-            $file = 'label.pdf';
-            file_put_contents($file, $decoded);
-    
-            if (file_exists($file)) {
+            $decoded = base64_decode($file);//echo $decoded;exit;
+            $file2 = 'label.pdf';
+            $fp = fopen($file2, "w+");
+            file_put_contents($file2, $decoded);
+
+            if (file_exists($file2)) {
                 header('Content-Description: File Transfer');
-                header('Content-Type: application/octet-stream');
-                header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+                header('Content-Type: application/pdf');
+                header('Content-Disposition: attachment; filename="' . basename($file2) . '"');
                 header('Expires: 0');
                 header('Cache-Control: must-revalidate');
                 header('Pragma: public');
-                header('Content-Length: ' . filesize($file));
-                readfile($file);
+                //header('Content-Length: ' . filesize($file2));
+                readfile($file2);
                 exit;
             }else{
                 echo "No existe el archivo";

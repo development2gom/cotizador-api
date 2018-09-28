@@ -27,6 +27,7 @@ use app\models\ResponseServices;
 use app\models\OpenPay;
 use app\models\EntOrdenesCompras;
 use app\models\Pagos;
+use app\config\ServicesApiConfig;
 
 /**
  * ConCategoiriesController implements the CRUD actions for ConCategoiries model.
@@ -103,7 +104,8 @@ class ApiController extends Controller
             'get-buscar-origen' => ['POST'],
             'get-buscar-destino' => ['POST'],
             'get-buscar-facturacion' => ['POST'],
-            'get-pagos-usuarios' => ['GET', 'HEAD']
+            'get-pagos-usuarios' => ['GET', 'HEAD'],
+            'download-pdf' => ['GET', 'HEAD']
         ];
     }
 
@@ -571,11 +573,11 @@ class ApiController extends Controller
 
             return $error;
         }
-        // if(empty($request->getBodyParam('original'))){
-        //     $error->message = 'Body de la petición faltante5';
+        if(empty($request->getBodyParam('tipo'))){
+            $error->message = 'Body de la petición faltante5';
 
-        //     return $error;
-        // }
+            return $error;
+        }
         if(empty($request->getBodyParam('cpOrigen'))){
             $error->message = 'Body de la petición faltante6';
 
@@ -583,6 +585,16 @@ class ApiController extends Controller
         }
         if(empty($request->getBodyParam('cpDestino'))){
             $error->message = 'Body de la petición faltante7';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('codPaisOr'))){
+            $error->message = 'Body de la petición faltante8';
+
+            return $error;
+        }
+        if(empty($request->getBodyParam('codPaisDes'))){
+            $error->message = 'Body de la petición faltante9';
 
             return $error;
         }
@@ -598,8 +610,13 @@ class ApiController extends Controller
         $transaction = Yii::$app->db->beginTransaction();
         try{
             if($origen->load($new_data) && $destino->load($new_data2)){
+                $pais1 = CatPaises::find()->where(['txt_codigo'=>$request->getBodyParam('codPaisOr')])->one();
+                $pais2 = CatPaises::find()->where(['txt_codigo'=>$request->getBodyParam('codPaisDes')])->one();
+
+                $origen->txt_pais = $pais1->uddi;
                 $origen->id_cliente = $cliente->id_cliente;
                 $destino->id_cliente = $cliente->id_cliente;
+                $destino->txt_pais = $pais1->uddi;
 
                 if($origen->save() && $destino->save()){
                     $envio = new WrkEnvios();
@@ -612,6 +629,7 @@ class ApiController extends Controller
                     $envio->num_cp_destino = $request->getBodyParam('cpDestino');
                     $envio->num_costo_envio = $request->getBodyParam('cliente');
                     $envio->num_subtotal = $request->getBodyParam('original');
+                    $envio->txt_tipo = $request->getBodyParam('tipo');
 
                     if(!$envio->save()){
                         $transaction->rollBack();
@@ -1028,5 +1046,93 @@ class ApiController extends Controller
         }
 
         return $uddi;
+    }
+
+    public function actionDownloadPdf($uddi_envio){
+        $envio = WrkEnvios::find()->where(['uddi'=>$uddi_envio])->one();
+        $origen = $envio->origen;
+        $destino = $envio->destino;
+        $cliente = $envio->cliente;
+
+        $paisOrigen = CatPaises::find()->where(['uddi'=>$origen->txt_pais])->one();
+        $paisDestino = CatPaises::find()->where(['uddi'=>$destino->txt_pais])->one();
+        //print_r($envio);exit;
+
+        $curl = curl_init();
+
+        $params["service_type"]= $envio->txt_tipo;
+        $params["service_packing"] = "YOUR_PACKAGING";
+
+        $params["shiper"]["postal_code"] = $origen->num_codigo_postal;
+        $params["shiper"]["country_code"] = $paisOrigen->txt_codigo;
+        $params["shiper"]["city"] = $origen->txt_estado;
+        $params["shiper"]["state_code"] = "EM";
+        $params["shiper"]["person_name"] = $origen->txt_nombre;
+        $params["shiper"]["address_line"] = $origen->txt_calle . " " . $origen->txt_municipio . " " . $origen->txt_estado;
+        $params["shiper"]["phone_number"] = $origen->num_telefono_movil;
+        $params["shiper"]["company_name"] = "Envios360";
+
+        $params["recipient"]["postal_code"] = $destino->num_codigo_postal;;
+        $params["recipient"]["country_code"] = $paisDestino->txt_codigo;
+        $params["recipient"]["city"] = $destino->txt_estado;;
+        $params["recipient"]["state_code"] = "EM";
+        $params["recipient"]["person_name"] = $destino->txt_nombre;
+        $params["recipient"]["address_line"] = $destino->txt_calle . " " . $destino->txt_municipio . " " . $destino->txt_estado;;
+        $params["recipient"]["phone_number"] = $destino->num_telefono_movil;
+        $params["recipient"]["company_name"] = "Envios360";
+
+        $params["package"]["peso_kg"] = 2;
+        $params["package"]["largo_cm"] = 20;
+        $params["package"]["ancho_cm"] = 20;
+        $params["package"]["alto_cm"] = 10;
+        
+
+        curl_setopt_array($curl, array(
+
+            CURLOPT_URL => ServicesApiConfig::URL_API_LABEL,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => json_encode($params),
+            CURLOPT_HTTPHEADER => array(
+                "Cache-Control: no-cache",
+                "Content-Type: application/json"
+            ),
+        ));
+
+        $response = curl_exec($curl);//print_r($response);exit;
+        $err = curl_error($curl);
+
+        curl_close($curl);
+
+        if ($err) {
+            //echo "cURL Error #:" . $err;
+            return false;
+        } else {
+            $response = json_decode($response);
+
+            $file = base64_encode($response->CompletedShipmentDetail->CompletedPackageDetails->Label->Parts->Image);
+
+            $decoded = base64_decode($file);
+            $file = 'label.pdf';
+            file_put_contents($file, $decoded);
+    
+            if (file_exists($file)) {
+                header('Content-Description: File Transfer');
+                header('Content-Type: application/octet-stream');
+                header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+                header('Expires: 0');
+                header('Cache-Control: must-revalidate');
+                header('Pragma: public');
+                header('Content-Length: ' . filesize($file));
+                readfile($file);
+                exit;
+            }else{
+                echo "No existe el archivo";
+            }
+        }
     }
 }

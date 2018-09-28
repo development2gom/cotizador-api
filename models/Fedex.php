@@ -177,7 +177,7 @@ class Fedex
             CURLOPT_TIMEOUT => 30,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => "POST",
-            CURLOPT_POSTFIELDS => "{\n  \"service_type\": \"FEDEX_EXPRESS_SAVER\",\n    \"service_packing\": \"YOUR_PACKAGING\",\n  \"shiper\":{\n    \"postal_code\":\"53240\",\n    \"country_code\":\"MX\",\n    \"city\":\"mexico\",\n    \"state_code\":\"EM\",\n    \"person_name\":\"Alberto Farías\",\n    \"phone_number\":\"12345678\",\n    \"address_line\":\"Circunvalacion pte 16 CD brisa naucalpan\",\n    \"company_name\":\"2gom\"\n  },\n  \"recipient\":{\n    \"postal_code\":\"08500\",\n    \"country_code\":\"MX\",\n    \"city\":\"mexico\",\n    \"state_code\":\"DF\",\n    \"person_name\":\"Alfredo Elizondo\",\n    \"phone_number\":\"123456789\",\n    \"address_line\":\"Juan Pestalozi 1234 casa 4 benito juarez\",\n    \"company_name\":\"2 geeks one monkey\"\n  },\n  \"package\":{\n    \"peso_kg\":2, \n    \"largo_cm\":20,\n    \"ancho_cm\":20,\n    \"alto_cm\":10\n  }\n}",
+            CURLOPT_POSTFIELDS => json_encode($params),
             CURLOPT_HTTPHEADER => array(
                 "Cache-Control: no-cache",
                 "Content-Type: application/json"

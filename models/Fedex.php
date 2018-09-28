@@ -124,7 +124,7 @@ class Fedex
             ),
         ));
 
-        $response = curl_exec($curl);
+        $response = curl_exec($curl);//print_r($response);exit;
         $err = curl_error($curl);
 
         curl_close($curl);
@@ -211,6 +211,7 @@ class Fedex
                 $eo->cpOrigen = $from;
                 $eo->cpDestino = $to;
                 $eo->precioOriginal = $costo->RateReplyDetails->RatedShipmentDetails[1]->ShipmentRateDetail->TotalNetCharge->Amount;
+                $eo->precioCliente = $costo->RateReplyDetails->RatedShipmentDetails[1]->ShipmentRateDetail->TotalNetCharge->Amount;
                 $eo->mensajeria = "FEDEX";
                 $eo->fechaEntrega = Calendario::getDateComplete($costo->RateReplyDetails->CommitDetails->CommitTimestamp);
                 $eo->tipoEnvio = $costo->RateReplyDetails->ServiceType;

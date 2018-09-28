@@ -430,8 +430,8 @@ class ApiController extends Controller
         $fedex = $serviciosMensajeria->getFedex($from, $to, $codeFrom, $codeTo);
         $data = array_merge($data, $fedex);
 
-        // $estafeta = Estafeta::datosEstafeta($from, $to, $paquetes);
-        // $data = array_merge($data, $estafeta);
+        $estafeta = Estafeta::datosEstafeta($from, $to, $paquetes);
+        $data = array_merge($data, $estafeta);
         //EnviosObject::setSessionEnvios($data);
 
         return $data;
@@ -571,11 +571,11 @@ class ApiController extends Controller
 
             return $error;
         }
-        if(empty($request->getBodyParam('original'))){
-            $error->message = 'Body de la petición faltante5';
+        // if(empty($request->getBodyParam('original'))){
+        //     $error->message = 'Body de la petición faltante5';
 
-            return $error;
-        }
+        //     return $error;
+        // }
         if(empty($request->getBodyParam('cpOrigen'))){
             $error->message = 'Body de la petición faltante6';
 

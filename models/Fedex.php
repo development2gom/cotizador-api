@@ -91,7 +91,7 @@ class Fedex
         }
     }
 
-    public function getCosto($serviceType, $from, $to, $countryCodeFrom, $countryCodeTo)
+    public function getCosto($serviceType, $from, $to, $countryCodeFrom, $countryCodeTo, $paquetes)
     {
         $params = [];
         $params["service_type"] = $serviceType;
@@ -100,10 +100,13 @@ class Fedex
         $params["shiper"]["country_code"] =$countryCodeFrom;
         $params["recipient"]["postal_code"] = $to;
         $params["recipient"]["country_code"] = $countryCodeTo;
-        $params["package"]["peso_kg"] = 2;
-        $params["package"]["largo_cm"] = 200;
-        $params["package"]["ancho_cm"] = 20;
-        $params["package"]["alto_cm"] = 10;
+
+        foreach($paquetes as $key => $paquete){
+            $params["package"][$key]["peso_kg"] = $paquete['numPeso'];
+            $params["package"][$key]["largo_cm"] = $paquete['numLargo'];
+            $params["package"][$key]["ancho_cm"] = $paquete['numAncho'];
+            $params["package"][$key]["alto_cm"] = $paquete['numAlto'];
+        }
 
         $curl = curl_init();
 
@@ -197,14 +200,14 @@ class Fedex
         }
     }
 
-    public function getFedex($from, $to, $countryCodeFrom, $countryCodeTo){
+    public function getFedex($from, $to, $countryCodeFrom, $countryCodeTo, $paquetes){
         $data = [];
         $fecha = Utils::changeFormatDateInputShort(Calendario::getFechaActual());
         $opcionesEnvio = $this->validarDisponibilidad($fecha, $from, $to, $countryCodeFrom, $countryCodeTo);
 
         //print_r($opcionesEnvio);exit;
         foreach ($opcionesEnvio->data->options as $opciones) {
-            $costo = $this->getCosto($opciones->Service, $from, $to, $countryCodeFrom, $countryCodeTo);
+            $costo = $this->getCosto($opciones->Service, $from, $to, $countryCodeFrom, $countryCodeTo, $paquetes);
 
             if (isset($costo->HighestSeverity) && $costo->HighestSeverity != "ERROR") {
                 $eo = new EnviosObject();

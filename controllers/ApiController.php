@@ -429,7 +429,7 @@ class ApiController extends Controller
         $paquetes = $request->getBodyParam('ObjectCotizar')['paquetes'];
 
         $serviciosMensajeria = new Fedex();
-        $fedex = $serviciosMensajeria->getFedex($from, $to, $codeFrom, $codeTo);
+        $fedex = $serviciosMensajeria->getFedex($from, $to, $codeFrom, $codeTo, $paquetes);
         $data = array_merge($data, $fedex);
 
         $estafeta = Estafeta::datosEstafeta($from, $to, $paquetes);

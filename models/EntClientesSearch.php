@@ -82,6 +82,12 @@ class EntClientesSearch extends EntClientes
      */
     public function searchClientes($params, $page=0)
     {
+
+        $rfc = EntFacturacion::find()->where(['like', 'txt_rfc', $params['txt_correo']])->one();
+        if($rfc){
+            $cliente = $rfc->cliente;
+            $params['txt_correo'] = $cliente->txt_correo;
+        }
         $query = EntClientes::find();        
 
         // add conditions that should always apply here
@@ -117,7 +123,7 @@ class EntClientesSearch extends EntClientes
             ->andFilterWhere(['like', 'txt_nombre', $this->txt_correo])
             ->andFilterWhere(['like', 'txt_apellido_paterno', $this->txt_apellido_paterno])
             ->andFilterWhere(['like', 'txt_apellido_materno', $this->txt_apellido_materno])
-            ->andFilterWhere(['like', 'num_telefono', $this->num_telefono])
+            ->orFilterWhere(['like', 'num_telefono', $this->txt_correo])
             ->orFilterWhere(['like', 'txt_correo', $this->txt_correo]);
 
         return $dataProvider;

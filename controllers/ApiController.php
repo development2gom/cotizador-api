@@ -760,7 +760,7 @@ class ApiController extends Controller
         $response = new ResponseServices();
         $response->status = "success";
         $response->message = "Orden de compra y pago generado correctamente";
-        $response->data = $pagoRecibido;
+        $response->data = $envio;
 
         return $response;
     }

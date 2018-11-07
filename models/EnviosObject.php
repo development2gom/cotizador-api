@@ -2,6 +2,8 @@
 namespace app\models;
 class EnviosObject{
 
+    public $hasError;
+    public $mensaje;
     public $cpOrigen;
     public $cpDestino;
     public $paquete = [];

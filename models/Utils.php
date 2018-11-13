@@ -6,6 +6,15 @@ use Yii;
 
 class Utils {
 
+	public static function getErrors($model){
+		$messageError = "";
+		foreach ($model->getFirstErrors() as $name => $message) {
+			$messageError .= $message;
+		}
+
+		return $messageError;
+	}
+
 	/**
 	 * Cambia el formato de la fecha
 	 * 

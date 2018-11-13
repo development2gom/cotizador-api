@@ -1,11 +1,14 @@
 <?php
 namespace app\models;
 
-use app\modules\ModUsuarios\models\Utils;
+use app\models\Utils;
+use yii\web\HttpException;
 
 
 class OpenPay{
 
+    public $idCliente;
+    public $idEnvio;
     public $clienteNombre;
     public $clienteEmail;
     public $description;
@@ -15,7 +18,11 @@ class OpenPay{
     public $errorObject;
     public $ordenCompra;
 
-    function __construct($clienteNombre, $clienteEmail, $description, $orderId, $amount, $subTotal) {
+    const TIEMPO_VIDA_TICKET_OPENPAY = '+4 hours';
+
+    function __construct($idCliente,$clienteNombre, $clienteEmail, $description, $orderId, $amount, $subTotal, $idEnvio) {
+         $this->idEnvio = $idEnvio;
+         $this->idCliente = $idCliente;
          $this->clienteNombre = $clienteNombre;
          $this->clienteEmail = $clienteEmail;
          $this->description = $description;
@@ -35,14 +42,16 @@ class OpenPay{
     }
     
 
-    public function generarOrdenCompra($orderOpenPay, $barcodeUrl=null, $pagado=0){
+    public function generarOrdenCompra($orderOpenPay, $barcodeUrl=null, $pagado=0, $referencia=null){
 
         $ordenCompra = new EntOrdenesCompras();
-        $ordenCompra->id_cliente = EntClientes::getUsuarioLogueado()->id_cliente;
+        $ordenCompra->id_cliente = $this->idCliente;
+        $ordenCompra->id_envio = $this->idEnvio;
         $ordenCompra->txt_descripcion = $this->description;
         $ordenCompra->txt_order_open_pay = $orderOpenPay;
         $ordenCompra->txt_order_number = $this->orderId;
         $ordenCompra->b_pagado = $pagado;
+        $ordenCompra->txt_referencia = $referencia;
 
         if($pagado){
             $ordenCompra->fch_pago = Calendario::getFechaActual();
@@ -57,13 +66,36 @@ class OpenPay{
         $ordenCompra->num_subtotal = $this->subTotal;
 
         if($ordenCompra->save()){
-            $this->ordenCompra = $ordenCompra;
-            return true;
+
+            if($pagado==1){
+                return $this->guardarPagoRecibido($ordenCompra->id_orden_compra, $orderOpenPay);
+            }
+            return $ordenCompra;
         }else{
-            $this->errorObject = $ordenCompra->errors;
+            throw new HttpException(500, "No se pudo guardar la orden de compra".Utils::getErrors($ordenCompra));
         }
 
-        return false;
+    }
+
+    public function guardarPagoRecibido($idOrdenCompra, $transaccion){
+        $pagoRecibido = new EntPagosRecibidos();
+        $pagoRecibido->id_cliente = $this->idCliente;
+        $pagoRecibido->id_orden_compra = $idOrdenCompra;
+        $pagoRecibido->txt_transaccion = $transaccion;
+        $pagoRecibido->txt_tipo_transaccion = "Tarjeta";
+        $pagoRecibido->txt_monto_pago = $this->amount;
+        $pagoRecibido->fch_pago = Calendario::getFechaActual();
+        $pagoRecibido->b_facturado = 0;
+        $pagoRecibido->txt_transaccion_local = uniqid();
+        $pagoRecibido->txt_notas = "Pago con tarjeta de credito";
+        $pagoRecibido->txt_estatus = "PAGADO";
+
+        if($pagoRecibido->save()){
+            
+            return $pagoRecibido;
+        }
+
+        throw new HttpException(500, "No se pudo guardar el pago ".Utils::getErrors($pagoRecibido));
     }
 
     /**
@@ -71,8 +103,7 @@ class OpenPay{
 	 */
 	public function generarTicket()
 	{
-        //$orderId = Utils::generateToken("op_");
-        $respuesta = new RespuestaDeApis();
+        
 		$openpay = \Openpay::getInstance(\Openpay::getId(), \Openpay::getApiKey());
         $cliente = $this->getCliente();
         
@@ -81,28 +112,25 @@ class OpenPay{
 			'amount' => $this->amount,
 			'description' => $this->description,
 			'customer' => $cliente,
-			'order_id' => $this->orderId
+            'order_id' => $this->orderId,
+            'due_date' => date('c', strtotime(self::TIEMPO_VIDA_TICKET_OPENPAY))
         ];
 
         try{
             $charge = $openpay->charges->create($chargeData);
 
-            if($this->generarOrdenCompra($charge->id, $charge->payment_method->barcode_url)){
-                $respuesta->status= 1;
-                $respuesta->message = "Todo bien";
-                $respuesta->object = $charge;
+            if($ordenCompra = $this->generarOrdenCompra($charge->id, $charge->payment_method->barcode_url, 0, $charge->payment_method->reference)){
+                
+                return $ordenCompra;
             }else{
-                $respuesta->message = "No se pudo generar la orden de compra";
-                $respuesta->object = $this->errorObject;
+                throw new HttpException(500, "No se pudo generar el ticket");
             }
            
         }catch(\OpenpayApiError $error){
-            $respuesta->message = $error->getMessage();
-            $respuesta->object = $error;
+            throw new HttpException(500, "No se pudo generar el ticket".$error->getMessage());
         }
 
 
-		return $respuesta;
     }
     
     /**
@@ -115,7 +143,6 @@ class OpenPay{
 	 */
 	public function cargoTarjeta($tokenId = null, $deviceId = null, $envio)
 	{
-        $respuesta = new RespuestaDeApis();
 		$openpay = \Openpay::getInstance(\Openpay::getId(), \Openpay::getApiKey());
 		
         $cliente = $this->getCliente();
@@ -135,20 +162,39 @@ class OpenPay{
         try{
             $charge = $openpay->charges->create($chargeData);
 
-            if($this->generarOrdenCompra($charge->id, null, 1)){
-                $respuesta->status= 1;
-                $respuesta->message = "Todo bien";
-                $respuesta->object = $charge;
-                $envio->id_pago =  $this->ordenCompra->id_orden_compra;
+            if($pagoRecibido = $this->generarOrdenCompra($charge->id, null, 1)){
+               
+                $envio->id_pago =  $pagoRecibido->id_pago_recibido;
                 $envio->save();
+
+                return $pagoRecibido;
                 
             }else{
-                $respuesta->message = "No se pudo generar la orden de compra";
+                throw new HttpException(500, "No se pudo generar la orden de compra");
             }
-        }catch(\OpenpayApiError $error){
-            $respuesta->message = $error->getMessage();
-            $respuesta->object = $error;
+        }catch(\Exception $error){
+            $message = "";
+            if($error->getMessage()=="The card was declined"){
+                $message = "La tarjeta fue declinada";
+            }
+
+            if($error->getMessage() =="The card has expired"){
+                $message = "La tarjeta ha expirado";
+            }
+
+            if($error->getMessage()=="The card doesn't have sufficient funds"){
+                $message = "La tarjeta no tiene los suficientes fondos";
+            }
+
+            if($error->getMessage()=="The card was reported as stolen"){
+                $message = "La tarjeta ha sido bloqueada";
+            }
+
+            if($error->getMessage()=="The card was declined (k)"){
+                $message = "La tarjeta tiene marca de fraude";
+            }
+            throw new HttpException(500, "No se pudo hacer el cargo a la tarjeta: ".$message);
         }
-		return $respuesta;
+		return $charge;
 	}
 }

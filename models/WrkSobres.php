@@ -14,7 +14,7 @@ use Yii;
 class WrkSobres extends \yii\db\ActiveRecord
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public static function tableName()
     {
@@ -22,18 +22,18 @@ class WrkSobres extends \yii\db\ActiveRecord
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function rules()
     {
         return [
             [['id_envio', 'num_peso'], 'required'],
-            [['id_envio', 'num_peso'], 'integer'],
+            [['id_envio', 'num_peso'], 'number'],
         ];
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function attributeLabels()
     {

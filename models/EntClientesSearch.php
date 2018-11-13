@@ -6,12 +6,14 @@ use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use app\models\EntClientes;
+use yii\db\Expression;
 
 /**
  * EntClientesSearch represents the model behind the search form of `app\models\EntClientes`.
  */
 class EntClientesSearch extends EntClientes
 {
+    public $parametrosBusqueda;
     /**
      * @inheritdoc
      */
@@ -19,6 +21,7 @@ class EntClientesSearch extends EntClientes
     {
         return [
             [['id_cliente', 'b_habilitado'], 'integer'],
+            [["parametrosBusqueda"], "safe"],
             [['uddi', 'txt_nombre', 'txt_apellido_paterno', 'txt_apellido_materno', 'num_telefono', 'txt_correo'], 'safe'],
         ];
     }
@@ -125,6 +128,38 @@ class EntClientesSearch extends EntClientes
             ->andFilterWhere(['like', 'txt_apellido_materno', $this->txt_apellido_materno])
             ->orFilterWhere(['like', 'num_telefono', $this->txt_correo])
             ->orFilterWhere(['like', 'txt_correo', $this->txt_correo]);
+
+        return $dataProvider;
+    }
+
+    public function buscarClientes($params)
+    {
+        $query = EntClientes::find();
+
+        // add conditions that should always apply here
+
+        $dataProvider = new ActiveDataProvider([
+            'query' => $query,
+        ]);
+
+        $this->load($params, '');
+
+        if (!$this->validate()) {
+            // uncomment the following line if you do not want to return any records when validation fails
+            // $query->where('0=1');
+            return $dataProvider;
+        }
+
+        // grid filtering conditions
+        $query->andFilterWhere([
+            'id_cliente' => $this->id_cliente,
+            'b_habilitado' => $this->b_habilitado,
+        ]);
+
+        $query->andFilterWhere(['like', 'uddi', $this->uddi])
+            ->orFilterWhere(['like', new Expression("CONCAT_WS(' ', txt_nombre, txt_apellido_paterno, txt_apellido_materno)"), $this->parametrosBusqueda])
+            ->orFilterWhere(['like', 'num_telefono', $this->parametrosBusqueda])
+            ->orFilterWhere(['like', 'txt_correo', $this->parametrosBusqueda]);
 
         return $dataProvider;
     }

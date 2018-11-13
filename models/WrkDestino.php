@@ -3,6 +3,7 @@
 namespace app\models;
 
 use Yii;
+use yii\web\HttpException;
 
 /**
  * This is the model class for table "wrk_destino".
@@ -13,9 +14,9 @@ use Yii;
  * @property string $txt_calle
  * @property string $txt_estado
  * @property string $txt_municipio
- * @property int $num_codigo_postal
- * @property int $num_telefono
- * @property int $num_telefono_movil
+ * @property string $num_codigo_postal
+ * @property string $num_telefono
+ * @property string $num_telefono_movil
  * @property string $txt_colonia
  * @property int $num_exterior
  * @property int $num_interior
@@ -29,10 +30,10 @@ use Yii;
  * @property EntClientes $cliente
  * @property WrkEnvios[] $wrkEnvios
  */
-class WrkDestino extends \yii\db\ActiveRecord
+class WrkDestino extends ModelBase
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public static function tableName()
     {
@@ -40,21 +41,23 @@ class WrkDestino extends \yii\db\ActiveRecord
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            [['txt_nombre', 'txt_pais', 'txt_calle', 'num_codigo_postal', 'txt_colonia', 'id_cliente'], 'required'],
-            [['num_codigo_postal', 'num_telefono', 'num_telefono_movil', 'num_exterior', 'num_interior', 'id_cliente', 'b_habilitado'], 'integer'],
+            [['txt_nombre', 'txt_pais', 'txt_calle', 'txt_colonia', 'id_cliente', "num_codigo_postal"], 'required'],
+            [['num_exterior', 'id_cliente', 'b_habilitado'], 'integer'],
             [['txt_nombre'], 'string', 'max' => 100],
             [['txt_pais', 'txt_calle', 'txt_estado', 'txt_municipio', 'txt_colonia', 'txt_correo', 'txt_nombre_ubicacion', 'txt_empresa', 'txt_puesto'], 'string', 'max' => 50],
+            [['num_codigo_postal'], 'string', 'max' => 11],
+            [['num_telefono', 'num_telefono_movil'], 'string', 'max' => 20],
             [['id_cliente'], 'exist', 'skipOnError' => true, 'targetClass' => EntClientes::className(), 'targetAttribute' => ['id_cliente' => 'id_cliente']],
         ];
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function attributeLabels()
     {
@@ -95,4 +98,43 @@ class WrkDestino extends \yii\db\ActiveRecord
     {
         return $this->hasMany(WrkEnvios::className(), ['id_destino' => 'id_destino']);
     }
+
+    public function guardar($idCliente){
+        $this->uddi = Utils::generateToken("des_");
+        $this->id_cliente = $idCliente;
+        if(!$this->save()){
+            throw new HttpException(500, "No se pudo guardar en la base de datos\n".Utils::getErrors($this));
+        }
+    }
+
+    public static function getDestino($uddi){
+        $model = self::find()->where(["uddi"=>$uddi])->one();
+        if(!$model){
+            throw new HttpException(404, "No se encuentra el destino");
+        }
+
+        return $model;
+    }
+
+    public function getDireccionCompleta(){
+        return $this->txt_calle." ".$this->num_exterior." ".$this->num_interior." ".$this->txt_colonia." ".$this->txt_municipio." ".$this->txt_estado." ".$this->txt_pais." ".$this->num_codigo_postal;
+    }
+
+    public function getDireccionShort(){
+        return $this->txt_calle . " " . $this->txt_municipio . " " . $this->txt_estado;
+    }
+
+    public function getCalleNumero(){
+        return $this->txt_calle." ".$this->num_exterior;
+    }
+
+    public function fields(){
+        $fields = parent::fields();
+        $fields[] = "direccionCompleta";
+        $fields[] = "direccionShort";
+        $fields[] = "calleNumero";
+        return $fields;
+    }
+
+
 }

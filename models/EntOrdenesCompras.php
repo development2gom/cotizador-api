@@ -28,7 +28,7 @@ use Yii;
 class EntOrdenesCompras extends \yii\db\ActiveRecord
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public static function tableName()
     {
@@ -36,16 +36,16 @@ class EntOrdenesCompras extends \yii\db\ActiveRecord
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            [['txt_order_number', 'id_cliente', 'num_total'], 'required'],
+            [['id_cliente', 'num_total'], 'required'],
             [['id_cliente', 'b_pagado', 'b_habilitado', 'b_subscripcion'], 'integer'],
             [['fch_creacion', 'fch_pago'], 'safe'],
             [['num_total', 'num_subtotal'], 'number'],
-            [['txt_order_number', 'txt_order_open_pay'], 'string', 'max' => 50],
+            [['txt_order_number', 'txt_order_open_pay'], 'string', 'max' => 100],
             [['txt_descripcion', 'txt_barcode_url'], 'string', 'max' => 500],
             [['txt_order_number'], 'unique'],
             [['id_cliente'], 'exist', 'skipOnError' => true, 'targetClass' => EntClientes::className(), 'targetAttribute' => ['id_cliente' => 'id_cliente']],
@@ -53,7 +53,7 @@ class EntOrdenesCompras extends \yii\db\ActiveRecord
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function attributeLabels()
     {

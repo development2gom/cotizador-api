@@ -21,7 +21,7 @@ use Yii;
 class WrkEmpaque extends \yii\db\ActiveRecord
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public static function tableName()
     {
@@ -29,19 +29,19 @@ class WrkEmpaque extends \yii\db\ActiveRecord
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            [['id_tipo_empaque', 'num_peso', 'num_alto', 'num_ancho', 'num_largo'], 'required'],
-            [['id_tipo_empaque', 'num_paquetes', 'num_peso', 'num_alto', 'num_ancho', 'num_largo', 'b_habilitado'], 'integer'],
-            [['id_tipo_empaque'], 'exist', 'skipOnError' => true, 'targetClass' => CatTipoEmpaque::className(), 'targetAttribute' => ['id_tipo_empaque' => 'id_tipo_empaque']],
+            [['num_peso', 'num_alto', 'num_ancho', 'num_largo'], 'required'],
+            [['num_paquetes', 'num_peso', 'num_alto', 'num_ancho', 'num_largo', 'b_habilitado'], 'number'],
+            
         ];
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function attributeLabels()
     {
@@ -57,11 +57,5 @@ class WrkEmpaque extends \yii\db\ActiveRecord
         ];
     }
 
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getTipoEmpaque()
-    {
-        return $this->hasOne(CatTipoEmpaque::className(), ['id_tipo_empaque' => 'id_tipo_empaque']);
-    }
+   
 }

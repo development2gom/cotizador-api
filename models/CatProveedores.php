@@ -3,6 +3,7 @@
 namespace app\models;
 
 use Yii;
+use yii\web\HttpException;
 
 /**
  * This is the model class for table "cat_proveedores".
@@ -18,7 +19,7 @@ use Yii;
 class CatProveedores extends \yii\db\ActiveRecord
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public static function tableName()
     {
@@ -26,7 +27,7 @@ class CatProveedores extends \yii\db\ActiveRecord
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function rules()
     {
@@ -39,7 +40,7 @@ class CatProveedores extends \yii\db\ActiveRecord
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function attributeLabels()
     {
@@ -58,5 +59,15 @@ class CatProveedores extends \yii\db\ActiveRecord
     public function getWrkEnvios()
     {
         return $this->hasMany(WrkEnvios::className(), ['id_proveedor' => 'id_proveedor']);
+    }
+
+    public static function getProveedorByUddi($uddi){
+        $model = self::find()->where(["uddi"=>$uddi])->one();
+
+        if(!$model){
+            throw new HttpException(404, "No existe el proveedor");
+        }
+
+        return $model;
     }
 }

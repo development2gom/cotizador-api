@@ -27,7 +27,7 @@ use Yii;
 class EntFacturacion extends \yii\db\ActiveRecord
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public static function tableName()
     {
@@ -35,7 +35,7 @@ class EntFacturacion extends \yii\db\ActiveRecord
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function rules()
     {
@@ -50,7 +50,7 @@ class EntFacturacion extends \yii\db\ActiveRecord
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function attributeLabels()
     {
@@ -78,16 +78,5 @@ class EntFacturacion extends \yii\db\ActiveRecord
     public function getCliente()
     {
         return $this->hasOne(EntClientes::className(), ['id_cliente' => 'id_cliente']);
-    }
-
-    public function fields(){
-        $fields = parent::fields();
-        
-        /**
-         * Se calculan y se regresan en el json de respuesta
-         */
-        $fields[] = 'cliente';
-
-        return $fields;
     }
 }

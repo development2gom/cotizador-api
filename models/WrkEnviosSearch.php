@@ -42,7 +42,7 @@ class WrkEnviosSearch extends WrkEnvios
      */
     public function search($params)
     {
-        $query = WrkEnvios::find();
+        $query = WrkEnvios::find()->where(['is not', 'id_pago', null]);
 
         // add conditions that should always apply here
 
@@ -75,7 +75,7 @@ class WrkEnviosSearch extends WrkEnvios
 
         $query->andFilterWhere(['like', 'txt_folio', $this->txt_folio])
             ->andFilterWhere(['like', 'txt_tipo', $this->txt_tipo])
-            ->andFilterWhere(['like', 'uddi', $this->uddi]);
+            ->andFilterWhere(['like', 'uddi', $this->uddi]);            
 
         return $dataProvider;
     }

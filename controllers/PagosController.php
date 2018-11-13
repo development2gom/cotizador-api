@@ -22,14 +22,12 @@ class PagosController extends Controller{
         $params = $request->bodyParams;
         $uddiCliente = $request->getBodyParam("uddi_cliente");
         $uddiEnvio = $request->getBodyParam("uddi_envio");
-        $total = $request->getBodyParam("total");
-        $subTotal = $request->getBodyParam("sub_total");
 
 
         $cliente = EntClientes::getClienteByUddi($uddiCliente);
         $envio = WrkEnvios::getEnvio($uddiEnvio);
 
-        $openPay = new OpenPay($cliente->id_cliente,$cliente->nombreCompleto, $cliente->txt_correo, "Ticket para envio", Utils::generateToken("tic_"), $total, $subTotal, $envio->id_envio);
+        $openPay = new OpenPay($cliente->id_cliente,$cliente->nombreCompleto, $cliente->txt_correo, "Ticket para envio", Utils::generateToken("tic_"), $envio->num_costo_envio, $envio->num_subtotal, $envio->id_envio);
 
         $respuesta = $openPay->generarTicket();
 
@@ -37,7 +35,23 @@ class PagosController extends Controller{
     }
 
     public function actionPagarTarjeta(){
+        $request = Yii::$app->request;
+        $params = $request->bodyParams;
+        $uddiCliente = $request->getBodyParam("uddi_cliente");
+        $uddiEnvio = $request->getBodyParam("uddi_envio");
+        $tokenid = $request->getBodyParam("token_id");
+        $deviceIdHiddenFieldName = $request->getBodyParam("deviceIdHiddenFieldName");
 
+        $cliente = EntClientes::getClienteByUddi($uddiCliente);
+        $envio = WrkEnvios::getEnvio($uddiEnvio);
+      
+    
+        $openPay = new OpenPay($cliente->id_cliente,$cliente->nombreCompleto, $cliente->txt_correo, "Pago con tarjeta para envio", Utils::generateToken("oc_"), $envio->num_costo_envio, $envio->num_subtotal, $envio->id_envio);
+        $respuesta = $openPay->cargoTarjeta($tokenid, $deviceIdHiddenFieldName, $envio);
+    
+        return $respuesta;
+           
+        
     }
 
     public function actionWebHook(){

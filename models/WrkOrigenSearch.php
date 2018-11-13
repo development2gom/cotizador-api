@@ -93,6 +93,7 @@ class WrkOrigenSearch extends WrkOrigen
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'sort' => ['defaultOrder'=>'id_origen desc']
         ]);
 
         $this->load($params, '');

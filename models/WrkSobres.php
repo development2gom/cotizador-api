@@ -28,7 +28,7 @@ class WrkSobres extends \yii\db\ActiveRecord
     {
         return [
             [['id_envio', 'num_peso'], 'required'],
-            [['id_envio', 'num_peso'], 'integer'],
+            [['id_envio', 'num_peso'], 'number'],
         ];
     }
 

@@ -125,4 +125,16 @@ class WrkOrigen extends \yii\db\ActiveRecord
     public function getDireccionShort(){
         return $this->txt_calle . " " . $this->txt_municipio . " " . $this->txt_estado;
     }
+
+    public function getCalleNumero(){
+        return $this->txt_calle." ".$this->num_exterior;
+    }
+
+    public function fields(){
+        $fields = parent::fields();
+        $fields[] = "direccionCompleta";
+        $fields[] = "direccionShort";
+        $fields[] = "calleNumero";
+        return $fields;
+    }
 }

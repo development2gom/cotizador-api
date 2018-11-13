@@ -51,7 +51,7 @@ class EntPagosRecibidos extends \yii\db\ActiveRecord
             [['txt_notas', 'txt_estatus', 'txt_transaccion', 'txt_tipo_transaccion', 'verify_sign'], 'string', 'max' => 100],
             [['txt_cadena_pago'], 'string', 'max' => 2000],
             [['txt_cadena_producto'], 'string', 'max' => 1000],
-            [['txt_monto_pago'], 'string', 'max' => 10],
+            //[['txt_monto_pago'], 'string', 'max' => 10],
             [['id_cliente'], 'exist', 'skipOnError' => true, 'targetClass' => EntClientes::className(), 'targetAttribute' => ['id_cliente' => 'id_cliente']],
             [['id_orden_compra'], 'exist', 'skipOnError' => true, 'targetClass' => EntOrdenesCompras::className(), 'targetAttribute' => ['id_orden_compra' => 'id_orden_compra']],
         ];

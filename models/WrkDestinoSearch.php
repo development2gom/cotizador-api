@@ -93,6 +93,7 @@ class WrkDestinoSearch extends WrkDestino
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'sort' => ['defaultOrder'=>'id_destino desc']
         ]);
 
         $this->load($params, '');

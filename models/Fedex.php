@@ -90,6 +90,8 @@ class Fedex extends Model
             ->post(ServicesApiConfig::URL_API_VALIDATE_SERVICE);
         $objetoRespuesta = json_decode($respuesta);
 
+        
+
         return $objetoRespuesta; 
        
     }
@@ -202,7 +204,15 @@ class Fedex extends Model
         $opcionesEnvio = $this->validarDisponibilidad($fecha, $from, $to, $countryCodeFrom, $countryCodeTo);
 
         if (isset($opcionesEnvio->HighestSeverity) && $opcionesEnvio->HighestSeverity != "ERROR") {
-            foreach ($opcionesEnvio->Options as $opciones) {
+            $opcionesArray = [];
+
+            if(is_array($opcionesEnvio->Options)){
+                $opcionesArray = $opcionesEnvio->Options;
+            }else{
+                $opcionesArray[] = $opcionesEnvio->Options;
+            }
+
+            foreach ($opcionesArray as $opciones) {
                 $costo = $this->getCosto($opciones->Service, $from, $to, $countryCodeFrom, $countryCodeTo, $paquetes);
                 $eo = new EnviosObject();
                 
@@ -214,13 +224,21 @@ class Fedex extends Model
                     $eo->precioOriginal = $costo->RateReplyDetails->RatedShipmentDetails[1]->ShipmentRateDetail->TotalNetCharge->Amount;
                     $eo->precioCliente = $costo->RateReplyDetails->RatedShipmentDetails[1]->ShipmentRateDetail->TotalNetCharge->Amount;
                     $eo->mensajeria = "FEDEX";
-                    //$eo->fechaEntrega = Calendario::getDateComplete($costo->RateReplyDetails->CommitDetails->CommitTimestamp);
+                    if(isset($costo->RateReplyDetails->CommitDetails->CommitTimestamp)){
+                        $eo->fechaEntrega = Calendario::getDateComplete($costo->RateReplyDetails->CommitDetails->CommitTimestamp);    
+                    }
+                    
                     $eo->tipoEnvio = $costo->RateReplyDetails->ServiceType;
                     $eo->urlImagen = Url::base()."/webAssets/images/fedex.png";
                     
                 }else{
                     $eo->hasError = true;
-                    $eo->mensaje = $this->obtenerErrores($costo->Notifications);
+                    $eo->mensaje = "Resultado vacío";
+                    if(isset($costo->Notifications)){
+                        $eo->mensaje = $this->obtenerErrores($costo->Notifications);
+                    }
+                    
+                    //$eo->mensaje = $this->obtenerErrores($costo->Notifications);
                 }
                 $data[] = $eo;
     
@@ -253,36 +271,6 @@ class Fedex extends Model
         return $errorMessage;
     }
 
-    public function generarPDF($response, $uddiEnvio){
-
-        if (isset($response->HighestSeverity) && $response->HighestSeverity != "ERROR") {
-            $file = base64_encode($response->CompletedShipmentDetail->CompletedPackageDetails->Label->Parts->Image);
-
-            $decoded = base64_decode($file);//echo $decoded;exit;
-            $basePath = "trackings-fedex/".$uddiEnvio.'/';
-
-            Files::validarDirectorio($basePath);
-
-            $file2 = $basePath.'tacking.pdf';
-            $fp = fopen($file2, "w+");
-            file_put_contents($file2, $decoded);
-
-            // if (file_exists($file2)) {
-            //     header('Content-Description: File Transfer');
-            //     header('Content-Type: application/pdf');
-            //     header('Content-Disposition: attachment; filename="' . basename($file2) . '"');
-            //     header('Expires: 0');
-            //     header('Cache-Control: must-revalidate');
-            //     header('Pragma: public');
-            //     //header('Content-Length: ' . filesize($file2));
-            //     readfile($file2);
-            //     exit;
-            // }else{
-            //     echo "No existe el archivo";
-            // }
-        }else{
-
-        }
-    }
+   
 
 }

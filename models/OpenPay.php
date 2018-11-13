@@ -1,7 +1,7 @@
 <?php
 namespace app\models;
 
-use app\modules\ModUsuarios\models\Utils;
+use app\models\Utils;
 use yii\web\HttpException;
 
 
@@ -66,11 +66,36 @@ class OpenPay{
         $ordenCompra->num_subtotal = $this->subTotal;
 
         if($ordenCompra->save()){
+
+            if($pagado==1){
+                return $this->guardarPagoRecibido($ordenCompra->id_orden_compra, $orderOpenPay);
+            }
             return $ordenCompra;
         }else{
-            throw new HttpException(500, "No se pudo guardar la orden de compra".Utils::getErrors($this));
+            throw new HttpException(500, "No se pudo guardar la orden de compra".Utils::getErrors($ordenCompra));
         }
 
+    }
+
+    public function guardarPagoRecibido($idOrdenCompra, $transaccion){
+        $pagoRecibido = new EntPagosRecibidos();
+        $pagoRecibido->id_cliente = $this->idCliente;
+        $pagoRecibido->id_orden_compra = $idOrdenCompra;
+        $pagoRecibido->txt_transaccion = $transaccion;
+        $pagoRecibido->txt_tipo_transaccion = "Tarjeta";
+        $pagoRecibido->txt_monto_pago = $this->amount;
+        $pagoRecibido->fch_pago = Calendario::getFechaActual();
+        $pagoRecibido->b_facturado = 0;
+        $pagoRecibido->txt_transaccion_local = uniqid();
+        $pagoRecibido->txt_notas = "Pago con tarjeta de credito";
+        $pagoRecibido->txt_estatus = "PAGADO";
+
+        if($pagoRecibido->save()){
+            
+            return $pagoRecibido;
+        }
+
+        throw new HttpException(500, "No se pudo guardar el pago ".Utils::getErrors($pagoRecibido));
     }
 
     /**
@@ -137,17 +162,39 @@ class OpenPay{
         try{
             $charge = $openpay->charges->create($chargeData);
 
-            if($ordenCompra = $this->generarOrdenCompra($charge->id, null, 1)){
+            if($pagoRecibido = $this->generarOrdenCompra($charge->id, null, 1)){
                
-                $envio->id_pago =  $this->ordenCompra->id_orden_compra;
+                $envio->id_pago =  $pagoRecibido->id_pago_recibido;
                 $envio->save();
+
+                return $pagoRecibido;
                 
             }else{
                 throw new HttpException(500, "No se pudo generar la orden de compra");
             }
-        }catch(\OpenpayApiError $error){
-            throw new HttpException(500, "No se pudo hacer el cargo a la tarjeta".$error->getError());
+        }catch(\Exception $error){
+            $message = "";
+            if($error->getMessage()=="The card was declined"){
+                $message = "La tarjeta fue declinada";
+            }
+
+            if($error->getMessage() =="The card has expired"){
+                $message = "La tarjeta ha expirado";
+            }
+
+            if($error->getMessage()=="The card doesn't have sufficient funds"){
+                $message = "La tarjeta no tiene los suficientes fondos";
+            }
+
+            if($error->getMessage()=="The card was reported as stolen"){
+                $message = "La tarjeta ha sido bloqueada";
+            }
+
+            if($error->getMessage()=="The card was declined (k)"){
+                $message = "La tarjeta tiene marca de fraude";
+            }
+            throw new HttpException(500, "No se pudo hacer el cargo a la tarjeta: ".$message);
         }
-		return $respuesta;
+		return $charge;
 	}
 }

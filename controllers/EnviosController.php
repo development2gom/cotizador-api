@@ -27,6 +27,8 @@ class EnviosController extends Controller{
         $uddiCliente = $request->getBodyParam("uddi_cliente");
         $uddiProveedor = $request->getBodyParam("uddi_proveedor");
         $uddiTipoEmpaque = $request->getBodyParam("uddi_tipo_empaque");
+        $paquetes = $request->getBodyParam("dimensiones_paquete");
+        $sobre = $request->getBodyParam("dimensiones_sobre");
 
         // Se busca al cliente para obtener el id del cliente
         $cliente = EntClientes::getClienteByUddi($uddiCliente);
@@ -38,7 +40,7 @@ class EnviosController extends Controller{
         $destino = new WrkDestino();
 
         if($envio->load($params, '') && $origen->load($params, "origen") && $destino->load($params, "destino")){
-            $envio->generarEnvio($cliente, $origen, $destino, $proveedor, $tipoEmpaque);
+            $envio->generarEnvio($cliente, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes, $sobre);
             return $envio;
         }else{
             throw new HttpException(500, "No se enviaron todos los datos");
@@ -142,22 +144,57 @@ class EnviosController extends Controller{
 
     }
 
-    public function actionGenerarLabelFedex(){
+    public function actionGenerarLabel(){
         $request = Yii::$app->request;
         $params = $request->bodyParams;
 
         $uddiEnvio = $request->getBodyParam("uddi_envio");
         
         $envio = WrkEnvios::getEnvio($uddiEnvio);
+
+        if($envio->txt_tracking_number){
+            throw new HttpException(500, "Ya existe una guia");
+        }
+
         $origen = $envio->origen;
         $destino = $envio->destino;
         $paquetes = $envio->empaque;
+
+        // @TODO Generar el label de acuerdo al courier
         $fedex = new Fedex($envio->tipoEmpaque->uddi);
         $respuesta = $fedex->getLabel($envio->txt_tipo, $origen->num_codigo_postal,$origen->txt_pais, $destino->txt_pais, $destino->num_codigo_postal, $origen->txt_municipio, 
             $destino->txt_municipio, $origen->txt_nombre, $destino->txt_nombre, $origen->num_telefono_movil, $destino->num_telefono_movil, $origen->direccionShort, 
             $destino->direccionShort, $origen->txt_empresa, $destino->txt_empresa, $paquetes);
-        $fedex->generarPDF($respuesta, $uddiEnvio);
+
+        if (isset($respuesta->HighestSeverity) && $respuesta->HighestSeverity != "ERROR") {
+            $envio->guardarNumeroRastreo($respuesta->CompletedShipmentDetail->MasterTrackingId->TrackingNumber, $respuesta->JobId);    
+        }
+        
+        $envio->generarPDF($respuesta);
         return $respuesta;    
+
+    }
+
+    public function actionDescargarEtiqueta($uddi){
+        
+        
+        $envio = WrkEnvios::getEnvio($uddi);
+        
+        $basePath = "trackings/".$uddi.'/tracking.pdf';
+
+        if (file_exists($basePath)) {
+                header('Content-Description: File Transfer');
+                header('Content-Type: application/pdf');
+                header('Content-Disposition: attachment; filename="' . basename($basePath) . '"');
+                header('Expires: 0');
+                header('Cache-Control: must-revalidate');
+                header('Pragma: public');
+                //header('Content-Length: ' . filesize($file2));
+                readfile($basePath);
+                exit;
+        }else{
+            throw new HttpException(404, "No existe el archivo para descargar");
+        }
 
     }
 

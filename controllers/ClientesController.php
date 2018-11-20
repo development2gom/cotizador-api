@@ -17,8 +17,8 @@ class ClientesController extends Controller{
     ];
 
     public function actionIndex(){
-        $request = Yii::$app->request;
-        $params = $request->bodyParams;
+        $request = Yii::$app->getRequest();
+        $params = $request->get();
         
         $clientesBuscar = new EntClientesSearch();
         $data = $clientesBuscar->buscarClientes($params);

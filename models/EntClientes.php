@@ -126,4 +126,12 @@ class EntClientes extends \yii\db\ActiveRecord
 
         return $cliente;
     }
+
+    public function fields(){
+        $fields = parent::fields();
+
+        unset($fields["id_cliente"]);
+
+        return $fields;
+    }
 }

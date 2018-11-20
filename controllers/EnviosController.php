@@ -149,8 +149,8 @@ class EnviosController extends Controller{
             $eo = new EnviosObject();
             $eo->cpOrigen = "54710";
             $eo->cpDestino = "57349";
-            $eo->precioOriginal = 258;
-            $eo->precioCliente = 258;
+            $eo->precioOriginal = 258+$i;
+            $eo->precioCliente = 258+($i+1);
             $eo->mensajeria = "FEDEX";
             $eo->fechaEntrega = "2018-11-26";    
             $eo->tipoEnvio = "Express";

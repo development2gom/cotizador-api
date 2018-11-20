@@ -17,12 +17,20 @@ class ClientesController extends Controller{
     ];
 
     public function actionIndex(){
-        $request = Yii::$app->getRequest();
-        $params = $request->get();
         
+        $params =  Yii::$app->request->queryParams;
+
         $clientesBuscar = new EntClientesSearch();
         $data = $clientesBuscar->buscarClientes($params);
         return $data;
+    }
+
+    public function actionGetCliente(){
+        $request = Yii::$app->request;
+        $params = $request->bodyParams;
+        $uddi = $request->getBodyParam("uddi_cliente");
+
+        return EntClientes::getClienteByUddi($uddi);
     }
 
    

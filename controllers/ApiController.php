@@ -28,6 +28,7 @@ use app\models\OpenPay;
 use app\models\EntOrdenesCompras;
 use app\models\Pagos;
 use app\config\ServicesApiConfig;
+use yii\web\HttpException;
 
 /**
  * ConCategoiriesController implements the CRUD actions for ConCategoiries model.
@@ -779,7 +780,7 @@ class ApiController extends Controller
         }
 
         // Datos de facturación
-        if(empty($request->getBodyParam('id_cliente'))){
+        if(empty($request->getBodyParam('uddi_cliente'))){
             $error->message = 'Body de la petición faltante5';
 
             return $error;
@@ -787,7 +788,7 @@ class ApiController extends Controller
 
         $botonesArray = [];
         $i = 0;
-        $transaccionesArray = explode(',', $request->getBodyParam('transacciones'));
+        $transaccionesArray = $request->getBodyParam('transacciones');
         foreach($transaccionesArray as $transaccion){
             $i++;
             $ordenPagada = EntPagosRecibidos::find()->where(["txt_transaccion"=>$transaccion])->one();
@@ -802,26 +803,15 @@ class ApiController extends Controller
                 $botonesArray[$i] = $botones;continue;
             }
 
-            $id_cliente = $request->getBodyParam('id_cliente');
+            $uddi_cliente = $request->getBodyParam('uddi_cliente');
             $id_factura = 0;
             if($request->getBodyParam('id_factura')){
                 $id_factura = $request->getBodyParam('id_factura');
             }
-            $cliente = EntClientes::find()->where(['id_cliente'=>$id_cliente])->one();
+            $cliente = EntClientes::getClienteByUddi($uddi_cliente);
 
-            $facturacion = EntFacturacion::find()->where(["id_factura"=>$id_factura, "id_cliente"=>$cliente->id_cliente])->one();
-            if(!$facturacion){
-                $facturacion = new EntFacturacion();
-                $facturacion->id_cliente = $id_cliente;
-
-                if($facturacion->load($request->bodyParams)){
-                    if(!$facturacion->save()){
-        
-                        return $facturacion;
-                    }
-                }
-            }
-                
+            $facturacion = EntFacturacion::getFacturaByIdCliente($id_factura, $cliente->id_cliente);
+            
             $factura = new Pagos();
             $facturaGenerar = $factura->generarFactura($facturacion, $ordenPagada);
             

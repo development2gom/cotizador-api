@@ -40,7 +40,7 @@ class EntClientes extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['b_habilitado'], 'integer'],
+            [['b_habilitado', 'id_cliente'], 'integer'],
             [['uddi'], 'string', 'max' => 100],
             [['txt_nombre', 'txt_apellido_paterno', 'txt_apellido_materno', 'txt_correo'], 'string', 'max' => 50],
             [['num_telefono'], 'string', 'max' => 11],

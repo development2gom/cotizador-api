@@ -392,9 +392,11 @@ class Pagos
         //execute post
         $result = curl_exec($ch);
         
-        $info = curl_getinfo($ch);
-
-        #print_r($info);
+		$info = curl_getinfo($ch);
+		
+		$error = curl_error($ch);
+		print_r($error);
+		
         //close connection
         curl_close($ch);
 

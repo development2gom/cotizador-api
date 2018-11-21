@@ -3,6 +3,7 @@
 namespace app\models;
 
 use Yii;
+use yii\web\HttpException;
 
 /**
  * This is the model class for table "ent_facturacion".
@@ -82,8 +83,10 @@ class EntFacturacion extends \yii\db\ActiveRecord
 
     public static function getFacturaByIdCliente($id_factura, $id_cliente){
         $facturacion = EntFacturacion::find()->where(["id_factura"=>$id_factura, "id_cliente"=>$id_cliente])->one();
-            if(!$facturacion){
-                throw new HttpException(404, 'No se encontraron datos de facturacion');
-            }
+        if(!$facturacion){
+            throw new HttpException(404, 'No se encontraron datos de facturacion');
+        }
+
+        return $facturacion;
     }
 }

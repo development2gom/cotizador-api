@@ -800,7 +800,7 @@ class ApiController extends Controller
             }
 
             if($ordenPagada->b_facturado){
-                $botonesArray[$i] = $botones;continue;
+                $botonesArray[$i] = $ordenPagada;continue;
             }
 
             $uddi_cliente = $request->getBodyParam('uddi_cliente');
@@ -830,7 +830,7 @@ class ApiController extends Controller
                 $ordenPagada->b_facturado = 1;
                 $ordenPagada->save();
                 
-                $botonesArray[$i] = $botones;continue;
+                $botonesArray[$i] = $ordenPagada;continue;
             }
 
             if(isset($facturaGenerar->error) && $facturaGenerar->error){
@@ -838,12 +838,7 @@ class ApiController extends Controller
             }
         }
 
-        $response = new ResponseServices();
-        $response->status = "success";
-        $response->message = "Factura generada correctamente";
-        $response->data = $botonesArray;
-
-        return $response;
+        return $botonesArray;
     }
     
     public function validarDirectorio($path){

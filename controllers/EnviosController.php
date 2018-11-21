@@ -12,6 +12,10 @@ use app\models\CatProveedores;
 use app\models\CatTipoEmpaque;
 use app\models\WrkEnviosSearch;
 use app\models\Fedex;
+use app\models\Calendario;
+use app\models\EnviosObject;
+use yii\helpers\Url;
+
 
 class EnviosController extends Controller{
 
@@ -21,6 +25,7 @@ class EnviosController extends Controller{
         'collectionEnvelope' => 'items',
     ];
 
+    // Crea un envio
     public function actionCreateEnvio(){
         $request = Yii::$app->request;
         $params = $request->bodyParams;
@@ -48,6 +53,7 @@ class EnviosController extends Controller{
 
     }
 
+    // Recupera todos los envios
     public function actionIndex(){
         $envios = new WrkEnviosSearch();
         $data = $envios->search(Yii::$app->getRequest()->get());
@@ -138,8 +144,25 @@ class EnviosController extends Controller{
             }
         }
 
+        $respuesta = [];
+        for($i = 0; $i<3; $i++){
+            $eo = new EnviosObject();
+            $eo->cpOrigen = "54710";
+            $eo->cpDestino = "57349";
+            $eo->precioOriginal = 258+$i;
+            $eo->precioCliente = 258+($i+1);
+            $eo->mensajeria = "FEDEX";
+            $eo->fechaEntrega = "2018-11-26";    
+            $eo->tipoEnvio = "Express";
+            $eo->urlImagen = Url::base()."/webAssets/images/fedex.png";
+
+            $respuesta[] = $eo;
+        }
+
+        return $respuesta;
 
         $fedex = new Fedex($tipoPaquete);
+        
         return $fedex->getFedex($cpFrom, $cpTo, $countryCodeFrom, $countryCodeTo, $paquetes,$tipoPaquete);
 
     }

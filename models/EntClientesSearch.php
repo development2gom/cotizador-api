@@ -52,7 +52,7 @@ class EntClientesSearch extends EntClientes
             'query' => $query,
         ]);
 
-        $this->load($params);
+        $this->load($params, '');
 
         if (!$this->validate()) {
             // uncomment the following line if you do not want to return any records when validation fails
@@ -141,8 +141,9 @@ class EntClientesSearch extends EntClientes
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
         ]);
-
+        
         $this->load($params, '');
+
 
         if (!$this->validate()) {
             // uncomment the following line if you do not want to return any records when validation fails

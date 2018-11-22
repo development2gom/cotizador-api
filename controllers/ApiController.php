@@ -106,7 +106,10 @@ class ApiController extends Controller
             'get-buscar-destino' => ['POST'],
             'get-buscar-facturacion' => ['POST'],
             'get-pagos-usuarios' => ['GET', 'HEAD'],
-            'download-pdf' => ['GET', 'HEAD']
+            'download-pdf' => ['GET', 'HEAD'],
+            'buscar-ultima-factura' => ['POST'],
+            'guardar-factura' => ['POST'],
+
         ];
     }
 
@@ -1120,5 +1123,50 @@ class ApiController extends Controller
                 echo "No existe el archivo";
             }
         }
+    }
+
+    public function actionBuscarUltimaFactura(){
+        $request = Yii::$app->request;
+
+        $error = new MessageResponse();
+        $error->responseCode = -1;
+
+        if(empty($request->getBodyParam('uddi_cliente'))){
+            $error->message = 'Body de la petición faltante';
+
+            return $error;
+        }
+
+        $uddiCliente = $request->getBodyParam('uddi_cliente');
+        // $uddiCliente = 'tDgV69e9ORcJwOUDYJ1zWv0PiGX2';//$request->getBodyParam('uddi_cliente');
+        $cliente = EntClientes::getClienteByUddi($uddiCliente);
+        $facturas = EntFacturacion::find()->where(['id_cliente'=>$cliente->id_cliente])->orderBy('id_factura DESC')->all();
+
+        foreach($facturas as $factura){
+            $response = new ResponseServices(); 
+
+            $response->status = 'success';
+            $response->message = 'Ultima factura';
+            $response->result = $factura->uddi;
+            
+            return $response;
+        }
+    }
+
+    public function actionGuardarFactura(){
+        $request = Yii::$app->request;
+        $response = new ResponseServices(); 
+
+        $factura = new EntFacturacion();
+        if($factura->load($request->bodyParams, "")){
+            $factura->uddi = Utils::generateToken("fac_");
+            
+            if($factura->save()){
+                $response->status = 'success';
+                $response->message = 'Factura guardada';
+                $response->result = $factura;
+            }
+        }
+        return $response;
     }
 }

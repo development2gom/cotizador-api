@@ -47,6 +47,17 @@ class ClientesController extends Controller{
         return $envios;
     }
 
+    /**
+     * Servicio para obtener un envio
+     */
+    public function actionGetUltimoEnvio(){
+        $request = Yii::$app->request;
+        $params = $request->bodyParams;
+        $uddi = $request->getBodyParam("uddi_cliente");
+        $cliente = EntClientes::getClienteByUddi($uddi);
+        
+        return $cliente->ultimoEnvio;
+    }
    
 
 }

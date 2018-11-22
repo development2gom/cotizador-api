@@ -156,7 +156,7 @@ class EnviosController extends Controller{
             $eo->mensajeria = "FEDEX";
             $eo->fechaEntrega = "2018-11-26";    
             $eo->tipoEnvio = "Express";
-            $eo->urlImagen = Yii::$app->urlManager->createAbsoluteUrl([''])."images/fedex.png";
+            $eo->urlImagen = Yii::$app->urlManager->createAbsoluteUrl([''])."images/fedex.jpg";
 
             $respuesta[] = $eo;
         }

@@ -230,7 +230,7 @@ class Fedex extends Model
                     }
                     
                     $eo->tipoEnvio = $costo->RateReplyDetails->ServiceType;
-                    $eo->urlImagen = Yii::$app->urlManager->createAbsoluteUrl([''])."images/fedex.png";
+                    $eo->urlImagen = Yii::$app->urlManager->createAbsoluteUrl([''])."images/fedex.jpg";
                     
                 }else{
                     $eo->hasError = true;

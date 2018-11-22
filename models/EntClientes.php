@@ -127,6 +127,12 @@ class EntClientes extends \yii\db\ActiveRecord
         return $cliente;
     }
 
+    public function getUltimoEnvio(){
+        $envio = WrkEnvios::find()->where(["id_cliente"=>$this->id_cliente])->orderBy("id_envio DESC")->one();
+
+        return $envio;
+    }
+
     public function fields(){
         $fields = parent::fields();
         unset($fields["id_cliente"]);

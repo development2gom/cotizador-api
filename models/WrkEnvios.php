@@ -105,6 +105,14 @@ class WrkEnvios extends \yii\db\ActiveRecord
     /**
      * @return \yii\db\ActiveQuery
      */
+    public function getSobres()
+    {
+        return $this->hasMany(WrkSobres::className(), ['id_envio' => 'id_envio']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
     public function getDestino()
     {
         return $this->hasOne(WrkDestino::className(), ['id_destino' => 'id_destino']);
@@ -253,6 +261,8 @@ class WrkEnvios extends \yii\db\ActiveRecord
         $fields[] = "cliente";
         $fields[] = "etiquetaUrl";
         $fields[] = "tipoEmpaque";
+        $fields[] = "empaque";
+        $fields[] = "sobres";
         
         return $fields;
     }

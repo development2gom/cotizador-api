@@ -1,6 +1,7 @@
 <?php
 namespace app\models;
 
+use Yii;
 use app\config\ServicesApiConfig;
 use app\models\Utils;
 use yii\helpers\Url;
@@ -229,7 +230,7 @@ class Fedex extends Model
                     }
                     
                     $eo->tipoEnvio = $costo->RateReplyDetails->ServiceType;
-                    $eo->urlImagen = Url::base()."/webAssets/images/fedex.png";
+                    $eo->urlImagen = Yii::$app->urlManager->createAbsoluteUrl([''])."images/fedex.png";
                     
                 }else{
                     $eo->hasError = true;

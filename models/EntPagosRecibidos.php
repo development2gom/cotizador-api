@@ -101,7 +101,21 @@ class EntPagosRecibidos extends \yii\db\ActiveRecord
     /**
      * 
      */
-    public static function guardarPagoRecibido(){
-        
+    public function getFactura(){
+        $urlFactura = [];
+        $baseUrl =  "facturas/".$this->cliente->uddi."/".$this->txt_transaccion;
+        if($this->b_facturado){
+            $urlFactura['pdf'] = $baseUrl . "/factura.pdf";
+            $urlFactura['xml'] = $baseUrl . "/factura.xml";
+        }
+
+        return $urlFactura;
+    }
+
+    public function fields(){
+        $fields = parent::fields();
+        $fields[] = 'factura';
+
+        return $fields;
     }
 }

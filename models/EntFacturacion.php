@@ -84,6 +84,15 @@ class EntFacturacion extends \yii\db\ActiveRecord
         return $this->hasOne(EntClientes::className(), ['id_cliente' => 'id_cliente']);
     }
 
+    public static function getFacturaByIdCliente($id_factura, $id_cliente){
+        $facturacion = EntFacturacion::find()->where(["id_factura"=>$id_factura, "id_cliente"=>$id_cliente])->one();
+        if(!$facturacion){
+            throw new HttpException(404, 'No se encontraron datos de facturacion');
+        }
+
+        return $facturacion;
+    }
+    
     public static function getFacturacionUddi($uddi)
     {
         $factura = self::find()->where(["uddi"=>$uddi])->one();

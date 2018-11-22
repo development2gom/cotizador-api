@@ -256,4 +256,8 @@ class WrkEnvios extends \yii\db\ActiveRecord
         
         return $fields;
     }
+
+    public function extraFields(){
+        
+    }
 }

@@ -15,12 +15,18 @@
     "minimum-stability": "stable",
     "require": {
         "php": ">=5.4.0",
-        "yiisoft/yii2": "~2.0.14",
+        "yiisoft/yii2": "~2.0.5",
         "yiisoft/yii2-bootstrap": "~2.0.0",
         "yiisoft/yii2-swiftmailer": "~2.0.0",
-        "yiisoft/yii2-queue": "^2.1",
-        "linslin/yii2-curl": "*",
-        "openpay/sdk": "dev-master"
+        "kartik-v/yii2-widget-select2": "@dev",
+        "kop/yii2-scroll-pager": "dev-master",
+        "kartik-v/yii2-grid": "@dev",
+        "kartik-v/yii2-mpdf": "*",
+        "johnitvn/yii2-ajaxcrud": "*",
+        "kartik-v/yii2-export": "*",
+        "openpay/sdk": "dev-master",
+        "guzzlehttp/guzzle": "^6.3",
+        "linslin/yii2-curl": "*"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.0.0",
@@ -33,17 +39,16 @@
     },
     "config": {
         "process-timeout": 1800,
-        "fxp-asset": {
-            "enabled": false
+        "fxp-asset":{
+            "installer-paths": {
+                "npm-asset-library": "vendor/npm",
+                "bower-asset-library": "vendor/bower"
+            }
         }
     },
     "scripts": {
-        "post-install-cmd": [
-            "yii\\composer\\Installer::postInstall"
-        ],
         "post-create-project-cmd": [
-            "yii\\composer\\Installer::postCreateProject",
-            "yii\\composer\\Installer::postInstall"
+            "yii\\composer\\Installer::postCreateProject"
         ]
     },
     "extra": {
@@ -54,18 +59,10 @@
                     "web/assets": "0777",
                     "yii": "0755"
                 }
-            ]
-        },
-        "yii\\composer\\Installer::postInstall": {
+            ],
             "generateCookieValidationKey": [
                 "config/web.php"
             ]
         }
-    },
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://asset-packagist.org"
-        }
-    ]
+    }
 }

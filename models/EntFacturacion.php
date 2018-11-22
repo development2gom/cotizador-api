@@ -8,20 +8,21 @@ use yii\web\HttpException;
 /**
  * This is the model class for table "ent_facturacion".
  *
- * @property int $id_factura
+ * @property string $id_factura
+ * @property string $uddi
  * @property string $txt_rfc
  * @property string $txt_razon_social
  * @property string $txt_nombre
  * @property string $txt_apellido_paterno
  * @property string $txt_apellido_materno
  * @property string $txt_calle
- * @property int $num_exterior
- * @property int $num_interior
+ * @property string $num_exterior
+ * @property string $num_interior
  * @property string $txt_colonia
  * @property string $txt_estado
  * @property string $txt_pais
- * @property int $id_cliente
- * @property int $b_habilitado
+ * @property string $id_cliente
+ * @property string $b_habilitado
  *
  * @property EntClientes $cliente
  */
@@ -41,11 +42,12 @@ class EntFacturacion extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['txt_rfc', 'txt_razon_social', 'txt_calle', 'num_exterior', 'txt_colonia', 'txt_pais', 'id_cliente'], 'required'],
+            [['uddi', 'txt_rfc', 'txt_razon_social', 'txt_calle', 'num_exterior', 'txt_colonia', 'txt_pais', 'id_cliente'], 'required'],
             [['num_exterior', 'num_interior', 'id_cliente', 'b_habilitado'], 'integer'],
+            [['uddi', 'txt_razon_social'], 'string', 'max' => 100],
             [['txt_rfc'], 'string', 'max' => 13],
-            [['txt_razon_social'], 'string', 'max' => 100],
             [['txt_nombre', 'txt_apellido_paterno', 'txt_apellido_materno', 'txt_calle', 'txt_colonia', 'txt_estado', 'txt_pais'], 'string', 'max' => 50],
+            [['uddi'], 'unique'],
             [['id_cliente'], 'exist', 'skipOnError' => true, 'targetClass' => EntClientes::className(), 'targetAttribute' => ['id_cliente' => 'id_cliente']],
         ];
     }
@@ -57,6 +59,7 @@ class EntFacturacion extends \yii\db\ActiveRecord
     {
         return [
             'id_factura' => 'Id Factura',
+            'uddi' => 'Uddi',
             'txt_rfc' => 'Txt Rfc',
             'txt_razon_social' => 'Txt Razon Social',
             'txt_nombre' => 'Txt Nombre',
@@ -88,5 +91,16 @@ class EntFacturacion extends \yii\db\ActiveRecord
         }
 
         return $facturacion;
+    }
+    
+    public static function getFacturacionUddi($uddi)
+    {
+        $factura = self::find()->where(["uddi"=>$uddi])->one();
+
+        if(!$factura)
+        {
+            throw new HttpException(404,'No existe la factura');
+        }
+        return $factura;
     }
 }

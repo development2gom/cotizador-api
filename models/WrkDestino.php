@@ -46,9 +46,11 @@ class WrkDestino extends ModelBase
     public function rules()
     {
         return [
-            [['txt_nombre', 'txt_pais', 'txt_calle', 'txt_colonia', 'id_cliente', "num_codigo_postal"], 'required'],
+            
+            [['num_codigo_postal', 'txt_pais'], 'required'],
             [['num_exterior', 'id_cliente', 'b_habilitado'], 'integer'],
             [['txt_nombre'], 'string', 'max' => 100],
+            [['txt_referencia'], 'string'],
             [['txt_pais', 'txt_calle', 'txt_estado', 'txt_municipio', 'txt_colonia', 'txt_correo', 'txt_nombre_ubicacion', 'txt_empresa', 'txt_puesto'], 'string', 'max' => 50],
             [['num_codigo_postal'], 'string', 'max' => 11],
             [['num_telefono', 'num_telefono_movil'], 'string', 'max' => 20],

@@ -46,7 +46,8 @@ class WrkOrigen extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['txt_nombre', 'txt_pais', 'txt_calle', 'txt_colonia', 'num_exterior', 'id_cliente'], 'required'],
+            
+            [['num_codigo_postal', 'txt_pais'], 'required'],
             [['id_cliente', 'b_habilitado'], 'integer'],
             [['txt_referencia'], 'string'],
             [['txt_nombre', 'txt_nombre_ubicacion', 'txt_empresa', 'txt_puesto'], 'string', 'max' => 100],

@@ -173,7 +173,7 @@ class OpenPay{
                 throw new HttpException(500, "No se pudo generar la orden de compra");
             }
         }catch(\Exception $error){
-            $message = "";
+            $message = $error->getMessage();
             if($error->getMessage()=="The card was declined"){
                 $message = "La tarjeta fue declinada";
             }

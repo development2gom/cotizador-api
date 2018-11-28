@@ -68,8 +68,7 @@ class EnviosController extends Controller{
         $params = $request->bodyParams;
 
         $cliente = null;
-        $paquetes = null;
-        $sobre = null;
+       
         $uddiEnvio = $request->getBodyParam("uddi_envio");
 
         if($request->getBodyParam("uddi_cliente")){
@@ -80,11 +79,10 @@ class EnviosController extends Controller{
         $envio = WrkEnvios::getEnvio($uddiEnvio);
         $origen = $envio->origen;
         $destino = $envio->destino;
-        $proveedor = $envio->proveedor;
         
 
         if($envio->load($params, '') && $origen->load($params, "origen") && $destino->load($params, "destino")){
-            $envio->actualizarEnvio($cliente, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes, $sobre);
+            $envio->actualizarEnvio($cliente, $origen, $destino);
             return $envio;
         }else{
             throw new HttpException(500, "No se enviaron todos los datos");

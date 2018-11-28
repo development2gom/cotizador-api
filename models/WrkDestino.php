@@ -48,7 +48,7 @@ class WrkDestino extends ModelBase
         return [
             
             [['num_codigo_postal', 'txt_pais'], 'required'],
-            [['num_exterior', 'id_cliente', 'b_habilitado'], 'integer'],
+            [['id_cliente', 'b_habilitado'], 'integer'],
             [['txt_nombre'], 'string', 'max' => 100],
             [['txt_referencia'], 'string'],
             [['txt_pais', 'txt_calle', 'txt_estado', 'txt_municipio', 'txt_colonia', 'txt_correo', 'txt_nombre_ubicacion', 'txt_empresa', 'txt_puesto'], 'string', 'max' => 50],

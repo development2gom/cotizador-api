@@ -29,14 +29,25 @@ class EnviosController extends Controller{
     public function actionCreateEnvio(){
         $request = Yii::$app->request;
         $params = $request->bodyParams;
-        $uddiCliente = $request->getBodyParam("uddi_cliente");
+
+        $cliente = null;
+        $paquetes = null;
+        $sobre = null;
+
+        if($request->getBodyParam("uddi_cliente")){
+            $uddiCliente = $request->getBodyParam("uddi_cliente");
+            $cliente = EntClientes::getClienteByUddi($uddiCliente);
+        }
+        if($request->getBodyParam("dimensiones_paquete")){
+            $paquetes = $request->getBodyParam("dimensiones_paquete");
+        }
+        if($request->getBodyParam("dimensiones_sobre")){
+            $sobre = $request->getBodyParam("dimensiones_sobre");
+        }
+
         $uddiProveedor = $request->getBodyParam("uddi_proveedor");
         $uddiTipoEmpaque = $request->getBodyParam("uddi_tipo_empaque");
-        $paquetes = $request->getBodyParam("dimensiones_paquete");
-        $sobre = $request->getBodyParam("dimensiones_sobre");
 
-        // Se busca al cliente para obtener el id del cliente
-        $cliente = EntClientes::getClienteByUddi($uddiCliente);
         $proveedor = CatProveedores::getProveedorByUddi($uddiProveedor);
         $tipoEmpaque = CatTipoEmpaque::getTipoEmpaqueByUddi($uddiTipoEmpaque);
 
@@ -45,12 +56,46 @@ class EnviosController extends Controller{
         $destino = new WrkDestino();
 
         if($envio->load($params, '') && $origen->load($params, "origen") && $destino->load($params, "destino")){
-            $envio->generarEnvio($cliente, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes, $sobre);
+            $envio->generarNuevoEnvio($cliente, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes, $sobre);
             return $envio;
         }else{
             throw new HttpException(500, "No se enviaron todos los datos");
         }
+    }
 
+    public function actionActualizarEnvio(){
+        $request = Yii::$app->request;
+        $params = $request->bodyParams;
+
+        $cliente = null;
+        $paquetes = null;
+        $sobre = null;
+        $uddiEnvio = $request->getBodyParam("uddi_envio");
+
+        if($request->getBodyParam("uddi_cliente")){
+            $uddiCliente = $request->getBodyParam("uddi_cliente");
+            $cliente = EntClientes::getClienteByUddi($uddiCliente);
+        }
+
+        $envio = WrkEnvios::getEnvio($uddiEnvio);
+        $origen = $envio->origen;
+        $destino = $envio->destino;
+        $proveedor = $envio->proveedor;
+        $tipoEmpaque = $envio->tipoEmpaque;
+
+        if($envio->empaque){
+            $paquetes = $envio->empaque;
+        }
+        if($envio->sobres){
+            $sobre = $envio->sobres;
+        }
+
+        if($envio->load($params, '') && $origen->load($params, "origen") && $destino->load($params, "destino")){
+            $envio->generarNuevoEnvio($cliente, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes, $sobre);
+            return $envio;
+        }else{
+            throw new HttpException(500, "No se enviaron todos los datos");
+        }
     }
 
     // Recupera todos los envios

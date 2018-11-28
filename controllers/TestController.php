@@ -83,6 +83,7 @@ class TestController extends Controller
     {
         return [
             'crear-envio' => ['POST'],
+            'actualizar-datos-envio' => ['POST']
         ];
     }
 
@@ -114,6 +115,41 @@ class TestController extends Controller
         $envio = new WrkEnvios();
         $origen = new WrkOrigen();
         $destino = new WrkDestino();
+
+        if($envio->load($params, '') && $origen->load($params, "origen") && $destino->load($params, "destino")){
+            $envio->generarNuevoEnvio($cliente, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes, $sobre);
+            return $envio;
+        }else{
+            throw new HttpException(500, "No se enviaron todos los datos");
+        }
+    }
+
+    public function actionActualizarDatosEnvio(){
+        $request = Yii::$app->request;
+        $params = $request->bodyParams;
+
+        $cliente = null;
+        $paquetes = null;
+        $sobre = null;
+        $uddiEnvio = $request->getBodyParam("uddi_envio");
+
+        if($request->getBodyParam("uddi_cliente")){
+            $uddiCliente = $request->getBodyParam("uddi_cliente");
+            $cliente = EntClientes::getClienteByUddi($uddiCliente);
+        }
+
+        $envio = WrkEnvios::getEnvio($uddiEnvio);
+        $origen = $envio->origen;
+        $destino = $envio->destino;
+        $proveedor = $envio->proveedor;
+        $tipoEmpaque = $envio->tipoEmpaque;
+
+        if($envio->empaque){
+            $paquetes = $envio->empaque;
+        }
+        if($envio->sobres){
+            $sobre = $envio->sobres;
+        }
 
         if($envio->load($params, '') && $origen->load($params, "origen") && $destino->load($params, "destino")){
             $envio->generarNuevoEnvio($cliente, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes, $sobre);

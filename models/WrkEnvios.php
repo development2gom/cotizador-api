@@ -310,7 +310,7 @@ class WrkEnvios extends \yii\db\ActiveRecord
             throw new HttpException(500, "No se pudo guardar en la base de datos\n".Utils::getErrors($this));
         }else{
 
-            if(strtoupper($this->id_tipo_empaque)=="SOBRE"){
+            if(strtoupper($tipoEmpaque->uddi)=="SOBRE"){
                 $datosSobre = new WrkSobres();
                 $datosSobre->id_envio = $this->id_envio;
                 $datosSobre->num_peso =$sobre["num_peso"];

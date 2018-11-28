@@ -84,7 +84,7 @@ class EnviosController extends Controller{
         
 
         if($envio->load($params, '') && $origen->load($params, "origen") && $destino->load($params, "destino")){
-            $envio->generarNuevoEnvio($cliente, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes, $sobre);
+            $envio->actualizarEnvio($cliente, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes, $sobre);
             return $envio;
         }else{
             throw new HttpException(500, "No se enviaron todos los datos");

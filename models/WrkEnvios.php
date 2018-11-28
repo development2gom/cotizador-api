@@ -48,8 +48,9 @@ class WrkEnvios extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
+            
             [['id_origen', 'id_destino', 'id_proveedor', 'id_pago', 'id_cliente', 'id_tipo_empaque', 'b_habilitado'], 'integer'],
-            [['id_cliente', 'id_tipo_empaque', 'id_destino', 'id_origen', 'id_proveedor'], 'required'],
+            [['id_tipo_empaque', 'id_destino', 'id_origen', 'id_proveedor'], 'required'],
             [['num_costo_envio', 'num_impuesto', 'num_subtotal'], 'number'],
             [['txt_folio', 'txt_tipo'], 'string', 'max' => 50],
             [['uddi'], 'string', 'max' => 100],
@@ -269,5 +270,71 @@ class WrkEnvios extends \yii\db\ActiveRecord
 
     public function extraFields(){
         
+    }
+
+    /**
+     * Guarda el envio
+     */
+    public function generarNuevoEnvio($cliente = null, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes = null, $sobre = null){
+
+        $transaction = Yii::$app->getDb()->beginTransaction();
+        
+        if($cliente){
+            // Guardar datos del destino
+            $destino->guardar($cliente->id_cliente);
+
+            // Guardar datos del origen
+            $origen->guardar($cliente->id_cliente);
+        }else{
+            // Guardar datos del destino
+            $destino->guardar(null);
+
+            // Guardar datos del origen
+            $origen->guardar(null);
+        }
+
+        $this->id_origen = $origen->id_origen;
+        $this->id_destino = $destino->id_destino;
+
+        if($cliente)
+            $this->id_cliente = $cliente->id_cliente;
+
+        $this->id_proveedor = $proveedor->id_proveedor;
+        $this->id_tipo_empaque = $tipoEmpaque->id_tipo_empaque;
+        $this->uddi = Utils::generateToken("env_");
+
+        // Guardar los datos del envio
+        if(!$this->save()){
+
+            $transaction->rollBack();
+            throw new HttpException(500, "No se pudo guardar en la base de datos\n".Utils::getErrors($this));
+        }else{
+
+            if(strtoupper($this->id_tipo_empaque)=="SOBRE"){
+                $datosSobre = new WrkSobres();
+                $datosSobre->id_envio = $this->id_envio;
+                $datosSobre->num_peso =$sobre["num_peso"];
+                $datosSobre->save();
+               
+            }else{
+                foreach($paquetes as $paquete){
+                    
+                    $paqueteGuardar = new WrkEmpaque();
+                    $paqueteGuardar->num_paquetes = $paquete["num_paquetes"];
+                    $paqueteGuardar->num_peso = $paquete["num_peso"];
+                    $paqueteGuardar->num_alto = $paquete["num_alto"];
+                    $paqueteGuardar->num_ancho = $paquete["num_ancho"];
+                    $paqueteGuardar->num_largo = $paquete["num_largo"];
+                    $paqueteGuardar->id_envio = $this->id_envio;
+                    
+                    if(!$paqueteGuardar->save()){
+                        throw new HttpException(500, "No se pudo guardar en la base de datos\n".Utils::getErrors($paqueteGuardar));
+                    }
+                    
+                }
+            }
+
+            $transaction->commit();
+        }
     }
 }

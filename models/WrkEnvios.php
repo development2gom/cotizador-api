@@ -337,4 +337,46 @@ class WrkEnvios extends \yii\db\ActiveRecord
             $transaction->commit();
         }
     }
+
+    /**
+     * Guarda el envio
+     */
+    public function actualizarEnvio($cliente = null, $origen, $destino){
+
+        $transaction = Yii::$app->getDb()->beginTransaction();
+        
+        if($cliente){
+            // Guardar datos del destino
+            $destino->guardar($cliente->id_cliente);
+
+            // Guardar datos del origen
+            $origen->guardar($cliente->id_cliente);
+        }else{
+            // Guardar datos del destino
+            $destino->guardar(null);
+
+            // Guardar datos del origen
+            $origen->guardar(null);
+        }
+
+        $this->id_origen = $origen->id_origen;
+        $this->id_destino = $destino->id_destino;
+
+        if($cliente)
+            $this->id_cliente = $cliente->id_cliente;
+
+       
+
+        // Guardar los datos del envio
+        if(!$this->save()){
+
+            $transaction->rollBack();
+            throw new HttpException(500, "No se pudo guardar en la base de datos\n".Utils::getErrors($this));
+        }else{
+
+            
+
+            $transaction->commit();
+        }
+    }
 }

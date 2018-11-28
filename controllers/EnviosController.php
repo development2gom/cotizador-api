@@ -81,14 +81,7 @@ class EnviosController extends Controller{
         $origen = $envio->origen;
         $destino = $envio->destino;
         $proveedor = $envio->proveedor;
-        $tipoEmpaque = $envio->tipoEmpaque;
-
-        if($envio->empaque){
-            $paquetes = $envio->empaque;
-        }
-        if($envio->sobres){
-            $sobre = $envio->sobres;
-        }
+        
 
         if($envio->load($params, '') && $origen->load($params, "origen") && $destino->load($params, "destino")){
             $envio->generarNuevoEnvio($cliente, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes, $sobre);

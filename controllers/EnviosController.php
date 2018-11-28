@@ -206,7 +206,7 @@ class EnviosController extends Controller{
             $respuesta[] = $eo;
         }
 
-        return $respuesta;
+        //return $respuesta;
 
         $fedex = new Fedex($tipoPaquete);
         

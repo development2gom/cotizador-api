@@ -53,6 +53,7 @@ class WrkDestino extends ModelBase
             [['txt_referencia'], 'string'],
             [['txt_pais', 'txt_calle', 'txt_estado', 'txt_municipio', 'txt_colonia', 'txt_correo', 'txt_nombre_ubicacion', 'txt_empresa', 'txt_puesto'], 'string', 'max' => 50],
             [['num_codigo_postal'], 'string', 'max' => 11],
+            [['num_exterior', 'num_interior'], 'string', 'max' => 20],
             [['num_telefono', 'num_telefono_movil'], 'string', 'max' => 20],
             [['id_cliente'], 'exist', 'skipOnError' => true, 'targetClass' => EntClientes::className(), 'targetAttribute' => ['id_cliente' => 'id_cliente']],
         ];

@@ -1,0 +1,1067 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions targetNamespace="http://estafetalabel.webservices.estafeta.com" xmlns:apachesoap="http://xml.apache.org/xml-soap" xmlns:impl="http://estafetalabel.webservices.estafeta.com" xmlns:intf="http://estafetalabel.webservices.estafeta.com" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns1="http://dto.estafetalabel.webservices.estafeta.com" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<!--WSDL created by Apache Axis version: 1.4
+Built on Apr 22, 2006 (06:55:48 PDT)-->
+ <wsdl:types>
+  <schema targetNamespace="http://dto.estafetalabel.webservices.estafeta.com" xmlns="http://www.w3.org/2001/XMLSchema">
+   <import namespace="http://estafetalabel.webservices.estafeta.com"/>
+   <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+   <complexType name="ShipmentInfo">
+    <sequence>
+     <element name="address1" nillable="true" type="xsd:string"/>
+     <element name="address2" nillable="true" type="xsd:string"/>
+     <element name="cellPhone" nillable="true" type="xsd:string"/>
+     <element name="city" nillable="true" type="xsd:string"/>
+     <element name="contactName" nillable="true" type="xsd:string"/>
+     <element name="corporateName" nillable="true" type="xsd:string"/>
+     <element name="customerNumber" nillable="true" type="xsd:string"/>
+     <element name="neighborhood" nillable="true" type="xsd:string"/>
+     <element name="phoneNumber" nillable="true" type="xsd:string"/>
+     <element name="state" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="zipCode" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="DRAlternativeInfo">
+    <complexContent>
+     <extension base="tns1:ShipmentInfo">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="DestinationInfo">
+    <complexContent>
+     <extension base="tns1:ShipmentInfo">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="OriginInfo">
+    <complexContent>
+     <extension base="tns1:ShipmentInfo">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="LabelDescription">
+    <sequence>
+     <element name="DRAlternativeInfo" nillable="true" type="tns1:DRAlternativeInfo"/>
+     <element name="aditionalInfo" nillable="true" type="xsd:string"/>
+     <element name="content" nillable="true" type="xsd:string"/>
+     <element name="contentDescription" nillable="true" type="xsd:string"/>
+     <element name="costCenter" nillable="true" type="xsd:string"/>
+     <element name="deliveryToEstafetaOffice" type="xsd:boolean"/>
+     <element name="destinationCountryId" nillable="true" type="xsd:string"/>
+     <element name="destinationInfo" nillable="true" type="tns1:DestinationInfo"/>
+     <element name="effectiveDate" nillable="true" type="xsd:string"/>
+     <element name="numberOfLabels" type="xsd:int"/>
+     <element name="officeNum" nillable="true" type="xsd:string"/>
+     <element name="originInfo" nillable="true" type="tns1:OriginInfo"/>
+     <element name="originZipCodeForRouting" nillable="true" type="xsd:string"/>
+     <element name="parcelTypeId" type="xsd:int"/>
+     <element name="reference" nillable="true" type="xsd:string"/>
+     <element name="returnDocument" type="xsd:boolean"/>
+     <element name="serviceTypeId" nillable="true" type="xsd:string"/>
+     <element name="serviceTypeIdDocRet" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="weight" type="xsd:float"/>
+    </sequence>
+   </complexType>
+   <complexType name="LabelDescriptionList">
+    <complexContent>
+     <extension base="tns1:LabelDescription">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="EstafetaLabelRequest">
+    <sequence>
+     <element name="customerNumber" nillable="true" type="xsd:string"/>
+     <element maxOccurs="unbounded" name="labelDescriptionList" nillable="true" type="tns1:LabelDescriptionList"/>
+     <element name="labelDescriptionListCount" type="xsd:int"/>
+     <element name="login" nillable="true" type="xsd:string"/>
+     <element name="paperType" type="xsd:int"/>
+     <element name="password" nillable="true" type="xsd:string"/>
+     <element name="quadrant" type="xsd:int"/>
+     <element name="suscriberId" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="Result">
+    <sequence>
+     <element name="resultCode" type="xsd:int"/>
+     <element name="resultDescription" nillable="true" type="xsd:string"/>
+     <element name="resultSpanishDescription" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="GlobalResult">
+    <complexContent>
+     <extension base="tns1:Result">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="LabelResultList">
+    <complexContent>
+     <extension base="tns1:Result">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="EstafetaLabelResponse">
+    <sequence>
+     <element name="globalResult" nillable="true" type="tns1:GlobalResult"/>
+     <element name="labelPDF" nillable="true" type="xsd:base64Binary"/>
+     <element name="labelResultList" nillable="true" type="impl:ArrayOf_tns1_LabelResultList"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="DestinationInfoReprint">
+    <complexContent>
+     <extension base="tns1:ShipmentInfo">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="OriginInfoReprint">
+    <complexContent>
+     <extension base="tns1:ShipmentInfo">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="ReprintLabelDescription">
+    <sequence>
+     <element name="aditionalInfo" nillable="true" type="xsd:string"/>
+     <element name="content" nillable="true" type="xsd:string"/>
+     <element name="contentDescription" nillable="true" type="xsd:string"/>
+     <element name="costCenter" nillable="true" type="xsd:string"/>
+     <element name="deliveryToEstafetaOffice" type="xsd:boolean"/>
+     <element name="destinationCountryId" nillable="true" type="xsd:string"/>
+     <element name="destinationInfoReprint" nillable="true" type="tns1:DestinationInfoReprint"/>
+     <element name="effectiveDate" nillable="true" type="xsd:string"/>
+     <element name="originInfoReprint" nillable="true" type="tns1:OriginInfoReprint"/>
+     <element name="originZipCodeForRouting" nillable="true" type="xsd:string"/>
+     <element name="parcelNumber" nillable="true" type="xsd:string"/>
+     <element name="parcelTypeId" type="xsd:int"/>
+     <element name="reference" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="weight" type="xsd:float"/>
+    </sequence>
+   </complexType>
+   <complexType name="ReprintLabelDescriptionList">
+    <complexContent>
+     <extension base="tns1:ReprintLabelDescription">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="EstafetaReprintLabelRequest">
+    <sequence>
+     <element name="customerNumber" nillable="true" type="xsd:string"/>
+     <element name="login" nillable="true" type="xsd:string"/>
+     <element name="paperType" type="xsd:int"/>
+     <element name="password" nillable="true" type="xsd:string"/>
+     <element name="quadrant" type="xsd:int"/>
+     <element maxOccurs="unbounded" name="reprintLabelDescriptionList" nillable="true" type="tns1:ReprintLabelDescriptionList"/>
+     <element name="reprintLabelDescriptionListCount" type="xsd:int"/>
+     <element name="suscriberId" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="DRAlternativeInfoSimple">
+    <complexContent>
+     <extension base="tns1:ShipmentInfo">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="DestinationInfoSimple">
+    <complexContent>
+     <extension base="tns1:ShipmentInfo">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="OriginInfoSimple">
+    <complexContent>
+     <extension base="tns1:ShipmentInfo">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="LabelSimpleDescription">
+    <sequence>
+     <element name="DRAlternativeInfoSimple" nillable="true" type="tns1:DRAlternativeInfoSimple"/>
+     <element name="aditionalInfo" nillable="true" type="xsd:string"/>
+     <element name="content" nillable="true" type="xsd:string"/>
+     <element name="contentDescription" nillable="true" type="xsd:string"/>
+     <element name="costCenter" nillable="true" type="xsd:string"/>
+     <element name="deliveryToEstafetaOffice" type="xsd:boolean"/>
+     <element name="destinationCountryId" nillable="true" type="xsd:string"/>
+     <element name="destinationInfoSimple" nillable="true" type="tns1:DestinationInfoSimple"/>
+     <element name="effectiveDate" nillable="true" type="xsd:string"/>
+     <element name="numberOfLabels" type="xsd:int"/>
+     <element name="officeNum" nillable="true" type="xsd:string"/>
+     <element name="originInfoSimple" nillable="true" type="tns1:OriginInfoSimple"/>
+     <element name="parcelTypeId" type="xsd:int"/>
+     <element name="reference" nillable="true" type="xsd:string"/>
+     <element name="returnDocument" type="xsd:boolean"/>
+     <element name="serviceTypeId" nillable="true" type="xsd:string"/>
+     <element name="serviceTypeIdDocRet" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="weight" type="xsd:float"/>
+    </sequence>
+   </complexType>
+   <complexType name="LabelSimpleDescriptionData">
+    <complexContent>
+     <extension base="tns1:LabelSimpleDescription">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="SystemInfo">
+    <sequence>
+     <element name="systemName" nillable="true" type="xsd:string"/>
+     <element name="systemReleasedDate" nillable="true" type="xsd:string"/>
+     <element name="systemVersion" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="PrinterSystem">
+    <complexContent>
+     <extension base="tns1:SystemInfo">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="EstafetaLabelSimpleRequest">
+    <sequence>
+     <element name="customerNumber" nillable="true" type="xsd:string"/>
+     <element name="labelSimpleDescriptionData" nillable="true" type="tns1:LabelSimpleDescriptionData"/>
+     <element name="login" nillable="true" type="xsd:string"/>
+     <element name="password" nillable="true" type="xsd:string"/>
+     <element name="printerSystem" nillable="true" type="tns1:PrinterSystem"/>
+     <element name="suscriberId" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="GlobalSimpleResult">
+    <complexContent>
+     <extension base="tns1:Result">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="DestinationInfoResult">
+    <complexContent>
+     <extension base="tns1:ShipmentInfo">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="OriginInfoResult">
+    <complexContent>
+     <extension base="tns1:ShipmentInfo">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="Routing">
+    <sequence>
+     <element name="additionalService" nillable="true" type="xsd:string"/>
+     <element name="borderPlace" nillable="true" type="xsd:string"/>
+     <element name="deliveryToEstafetaOffice" nillable="true" type="xsd:string"/>
+     <element name="destinationPlace" nillable="true" type="xsd:string"/>
+     <element name="downFligth" nillable="true" type="xsd:string"/>
+     <element name="ground" nillable="true" type="xsd:string"/>
+     <element name="holdPoint" nillable="true" type="xsd:string"/>
+     <element name="noWarranty" nillable="true" type="xsd:string"/>
+     <element name="originPlace" nillable="true" type="xsd:string"/>
+     <element name="placeId" nillable="true" type="xsd:string"/>
+     <element name="placeName" nillable="true" type="xsd:string"/>
+     <element name="regionId" nillable="true" type="xsd:string"/>
+     <element name="service" nillable="true" type="xsd:string"/>
+     <element name="serviceDescription" nillable="true" type="xsd:string"/>
+     <element name="upFligth" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="zipCode" nillable="true" type="xsd:string"/>
+     <element name="zoneId" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="RoutingResult">
+    <complexContent>
+     <extension base="tns1:Routing">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="WaybillResult">
+    <complexContent>
+     <extension base="tns1:Result">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="Waybill">
+    <sequence>
+     <element name="aditionalInfo" nillable="true" type="xsd:string"/>
+     <element name="codeC128" nillable="true" type="xsd:base64Binary"/>
+     <element name="codePDF417" nillable="true" type="xsd:base64Binary"/>
+     <element name="content" nillable="true" type="xsd:string"/>
+     <element name="contentDescription" nillable="true" type="xsd:string"/>
+     <element name="declaredWeight" nillable="true" type="xsd:string"/>
+     <element name="destinationInfoResult" nillable="true" type="tns1:DestinationInfoResult"/>
+     <element name="effectiveDate" nillable="true" type="xsd:string"/>
+     <element name="originInfoResult" nillable="true" type="tns1:OriginInfoResult"/>
+     <element name="parcelId" nillable="true" type="xsd:string"/>
+     <element name="parcelIdShort" nillable="true" type="xsd:string"/>
+     <element name="reference" nillable="true" type="xsd:string"/>
+     <element name="routingResult" nillable="true" type="tns1:RoutingResult"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="waybillResult" nillable="true" type="tns1:WaybillResult"/>
+    </sequence>
+   </complexType>
+   <complexType name="WaybillEstafeta">
+    <complexContent>
+     <extension base="tns1:Waybill">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="WaybillGeneratorSystem">
+    <complexContent>
+     <extension base="tns1:SystemInfo">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="EstafetaLabelSimpleResponse">
+    <sequence>
+     <element name="globalSimpleResult" nillable="true" type="tns1:GlobalSimpleResult"/>
+     <element name="printerSystem" nillable="true" type="tns1:PrinterSystem"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="waybillEstafeta" nillable="true" type="impl:ArrayOf_tns1_WaybillEstafeta"/>
+     <element name="waybillGeneratorSystem" nillable="true" type="tns1:WaybillGeneratorSystem"/>
+    </sequence>
+   </complexType>
+   <complexType name="GlobalImageSimpleResult">
+    <complexContent>
+     <extension base="tns1:Result">
+      <sequence>
+       <element name="_imgCartaPorte" nillable="true" type="xsd:base64Binary"/>
+       <element name="_imgDomicilioFiscal" nillable="true" type="xsd:base64Binary"/>
+       <element name="_imgLogoEstafeta" nillable="true" type="xsd:base64Binary"/>
+      </sequence>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="EstafetaLabelImageSimpleResponse">
+    <sequence>
+     <element name="globalSimpleResult" nillable="true" type="tns1:GlobalImageSimpleResult"/>
+     <element name="printerSystem" nillable="true" type="tns1:PrinterSystem"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="waybillEstafeta" nillable="true" type="impl:ArrayOf_tns1_WaybillEstafeta"/>
+     <element name="waybillGeneratorSystem" nillable="true" type="tns1:WaybillGeneratorSystem"/>
+    </sequence>
+   </complexType>
+   <complexType name="COD">
+    <sequence>
+     <element name="deliveryType" nillable="true" type="xsd:string"/>
+     <element name="officeCOD" nillable="true" type="xsd:string"/>
+     <element name="productDescription" nillable="true" type="xsd:string"/>
+     <element name="reference" nillable="true" type="xsd:string"/>
+     <element name="shipmentInvoice" nillable="true" type="xsd:string"/>
+     <element name="totalCharge" type="xsd:float"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="ShipmentInfoVol">
+    <sequence>
+     <element name="address1" nillable="true" type="xsd:string"/>
+     <element name="address2" nillable="true" type="xsd:string"/>
+     <element name="cellPhone" nillable="true" type="xsd:string"/>
+     <element name="city" nillable="true" type="xsd:string"/>
+     <element name="contactName" nillable="true" type="xsd:string"/>
+     <element name="corporateName" nillable="true" type="xsd:string"/>
+     <element name="customerNumber" nillable="true" type="xsd:string"/>
+     <element name="email" nillable="true" type="xsd:string"/>
+     <element name="neighborhood" nillable="true" type="xsd:string"/>
+     <element name="phoneNumber" nillable="true" type="xsd:string"/>
+     <element name="state" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="zipCode" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="DestinationInfoVol">
+    <complexContent>
+     <extension base="tns1:ShipmentInfoVol">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="OriginInfoVol">
+    <complexContent>
+     <extension base="tns1:ShipmentInfoVol">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="SystemInformationVol">
+    <sequence>
+     <element name="systemID" nillable="true" type="xsd:string"/>
+     <element name="systemName" nillable="true" type="xsd:string"/>
+     <element name="systemVersion" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="LabelDescriptionVol">
+    <sequence>
+     <element name="DRAlternativeInfo" nillable="true" type="tns1:DRAlternativeInfo"/>
+     <element name="aditionalInfo" nillable="true" type="xsd:string"/>
+     <element name="cod" nillable="true" type="tns1:COD"/>
+     <element name="content" nillable="true" type="xsd:string"/>
+     <element name="contentDescription" nillable="true" type="xsd:string"/>
+     <element name="costCenter" nillable="true" type="xsd:string"/>
+     <element name="customerID" nillable="true" type="xsd:string"/>
+     <element name="deliveryToEstafetaOffice" type="xsd:boolean"/>
+     <element name="destinationCountryId" nillable="true" type="xsd:string"/>
+     <element name="destinationInfo" nillable="true" type="tns1:DestinationInfoVol"/>
+     <element name="effectiveDate" nillable="true" type="xsd:string"/>
+     <element name="numberOfLabels" type="xsd:int"/>
+     <element name="officeNum" nillable="true" type="xsd:string"/>
+     <element name="originInfo" nillable="true" type="tns1:OriginInfoVol"/>
+     <element name="originZipCodeForRouting" nillable="true" type="xsd:string"/>
+     <element name="parcelTypeId" type="xsd:int"/>
+     <element name="reference" nillable="true" type="xsd:string"/>
+     <element name="returnDocument" type="xsd:boolean"/>
+     <element name="serviceTypeAditional" nillable="true" type="xsd:string"/>
+     <element name="serviceTypeAditionalID" nillable="true" type="xsd:string"/>
+     <element name="serviceTypeId" nillable="true" type="xsd:string"/>
+     <element name="serviceTypeIdDocRet" nillable="true" type="xsd:string"/>
+     <element name="shipmentGroupID" nillable="true" type="xsd:string"/>
+     <element name="systemInformationVol" nillable="true" type="tns1:SystemInformationVol"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="weight" type="xsd:float"/>
+    </sequence>
+   </complexType>
+   <complexType name="LabelDescriptionListVol">
+    <complexContent>
+     <extension base="tns1:LabelDescriptionVol">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="EstafetaLabelRequestVol">
+    <sequence>
+     <element name="customerNumber" nillable="true" type="xsd:string"/>
+     <element maxOccurs="unbounded" name="labelDescriptionList" nillable="true" type="tns1:LabelDescriptionListVol"/>
+     <element name="labelDescriptionListCount" type="xsd:int"/>
+     <element name="login" nillable="true" type="xsd:string"/>
+     <element name="paperType" type="xsd:int"/>
+     <element name="password" nillable="true" type="xsd:string"/>
+     <element name="quadrant" type="xsd:int"/>
+     <element name="secType" nillable="true" type="xsd:string"/>
+     <element name="suscriberId" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="EstafetaLabelResponseVol">
+    <sequence>
+     <element name="globalResult" nillable="true" type="tns1:GlobalResult"/>
+     <element name="labelPDF" nillable="true" type="xsd:base64Binary"/>
+     <element name="labelResultList" nillable="true" type="impl:ArrayOf_tns1_LabelResultList"/>
+     <element name="secEsc" nillable="true" type="xsd:base64Binary"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="LabelListIndividual">
+    <complexContent>
+     <extension base="tns1:Result">
+      <sequence>
+       <element name="labelPDF" nillable="true" type="xsd:base64Binary"/>
+       <element name="numRef" nillable="true" type="xsd:string"/>
+       <element name="numWaybill" nillable="true" type="xsd:string"/>
+       <element name="secEsc" nillable="true" type="xsd:string"/>
+      </sequence>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="EstafetaLabelResponseIndividual">
+    <sequence>
+     <element name="globalResult" nillable="true" type="tns1:GlobalResult"/>
+     <element name="labelResultList" nillable="true" type="impl:ArrayOf_tns1_LabelResultList"/>
+     <element name="labelResultListIndividual" nillable="true" type="impl:ArrayOf_tns1_LabelListIndividual"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="ShipmentInfoExtended">
+    <sequence>
+     <element name="address1" nillable="true" type="xsd:string"/>
+     <element name="address2" nillable="true" type="xsd:string"/>
+     <element name="andStreet" nillable="true" type="xsd:string"/>
+     <element name="betweenStreet" nillable="true" type="xsd:string"/>
+     <element name="cellPhone" nillable="true" type="xsd:string"/>
+     <element name="city" nillable="true" type="xsd:string"/>
+     <element name="contactName" nillable="true" type="xsd:string"/>
+     <element name="corporateName" nillable="true" type="xsd:string"/>
+     <element name="customerNumber" nillable="true" type="xsd:string"/>
+     <element name="email" nillable="true" type="xsd:string"/>
+     <element name="intNum" nillable="true" type="xsd:string"/>
+     <element name="nave" nillable="true" type="xsd:string"/>
+     <element name="neighborhood" nillable="true" type="xsd:string"/>
+     <element name="outNum" nillable="true" type="xsd:string"/>
+     <element name="phoneNumber" nillable="true" type="xsd:string"/>
+     <element name="platform" nillable="true" type="xsd:string"/>
+     <element name="state" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="zipCode" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="DestinationInfoExtended">
+    <complexContent>
+     <extension base="tns1:ShipmentInfoExtended">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="DimensionsInfo">
+    <sequence>
+     <element name="height" type="xsd:int"/>
+     <element name="length" type="xsd:int"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="width" type="xsd:int"/>
+    </sequence>
+   </complexType>
+   <complexType name="OriginInfoExtended">
+    <complexContent>
+     <extension base="tns1:ShipmentInfoExtended">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="OriginPallet">
+    <sequence>
+     <element name="merchandise" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="LabelDescriptionExtended">
+    <sequence>
+     <element name="DRAlternativeInfo" nillable="true" type="tns1:DRAlternativeInfo"/>
+     <element name="aditionalInfo" nillable="true" type="xsd:string"/>
+     <element name="cod" nillable="true" type="tns1:COD"/>
+     <element name="content" nillable="true" type="xsd:string"/>
+     <element name="contentDescription" nillable="true" type="xsd:string"/>
+     <element name="costCenter" nillable="true" type="xsd:string"/>
+     <element name="customerID" nillable="true" type="xsd:string"/>
+     <element name="declaredValue" type="xsd:float"/>
+     <element name="deliveryToEstafetaOffice" type="xsd:boolean"/>
+     <element name="destinationCountryId" nillable="true" type="xsd:string"/>
+     <element name="destinationInfo" nillable="true" type="tns1:DestinationInfoExtended"/>
+     <element name="dimensionsInfo" nillable="true" type="tns1:DimensionsInfo"/>
+     <element name="effectiveDate" nillable="true" type="xsd:string"/>
+     <element name="insurance" type="xsd:boolean"/>
+     <element name="numberOfLabels" type="xsd:int"/>
+     <element name="officeNum" nillable="true" type="xsd:string"/>
+     <element name="originInfo" nillable="true" type="tns1:OriginInfoExtended"/>
+     <element name="originPallet" nillable="true" type="tns1:OriginPallet"/>
+     <element name="originZipCodeForRouting" nillable="true" type="xsd:string"/>
+     <element name="parcelTypeId" type="xsd:int"/>
+     <element name="reference" nillable="true" type="xsd:string"/>
+     <element name="returnDocument" type="xsd:boolean"/>
+     <element name="serviceTypeAditional" nillable="true" type="xsd:string"/>
+     <element name="serviceTypeAditionalID" nillable="true" type="xsd:string"/>
+     <element name="serviceTypeId" nillable="true" type="xsd:string"/>
+     <element name="serviceTypeIdDocRet" nillable="true" type="xsd:string"/>
+     <element name="shipmentGroupID" nillable="true" type="xsd:string"/>
+     <element name="systemInformationVol" nillable="true" type="tns1:SystemInformationVol"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="weight" type="xsd:float"/>
+    </sequence>
+   </complexType>
+   <complexType name="LabelDescriptionListExtended">
+    <complexContent>
+     <extension base="tns1:LabelDescriptionExtended">
+      <sequence/>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="EstafetaLabelRequestExtended">
+    <sequence>
+     <element name="customerNumber" nillable="true" type="xsd:string"/>
+     <element maxOccurs="unbounded" name="labelDescriptionList" nillable="true" type="tns1:LabelDescriptionListExtended"/>
+     <element name="labelDescriptionListCount" type="xsd:int"/>
+     <element name="login" nillable="true" type="xsd:string"/>
+     <element name="paperType" type="xsd:int"/>
+     <element name="password" nillable="true" type="xsd:string"/>
+     <element name="quadrant" type="xsd:int"/>
+     <element name="secType" nillable="true" type="xsd:string"/>
+     <element name="suscriberId" nillable="true" type="xsd:string"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="EstafetaLabelResponseExtended">
+    <sequence>
+     <element name="globalResult" nillable="true" type="tns1:GlobalResult"/>
+     <element name="labelPDF" nillable="true" type="xsd:base64Binary"/>
+     <element name="labelResultList" nillable="true" type="impl:ArrayOf_tns1_LabelResultList"/>
+     <element name="secEsc" nillable="true" type="xsd:base64Binary"/>
+     <element name="valid" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="WaybillEstafetaData">
+    <complexContent>
+     <extension base="tns1:Waybill">
+      <sequence>
+       <element name="pdf417Code" nillable="true" type="xsd:string"/>
+      </sequence>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="EstafetaLabelImageDataSimpleResponse">
+    <sequence>
+     <element name="globalSimpleResult" nillable="true" type="tns1:GlobalImageSimpleResult"/>
+     <element name="printerSystem" nillable="true" type="tns1:PrinterSystem"/>
+     <element name="valid" type="xsd:boolean"/>
+     <element name="waybillEstafetaData" nillable="true" type="impl:ArrayOf_tns1_WaybillEstafetaData"/>
+     <element name="waybillGeneratorSystem" nillable="true" type="tns1:WaybillGeneratorSystem"/>
+    </sequence>
+   </complexType>
+  </schema>
+  <schema targetNamespace="http://estafetalabel.webservices.estafeta.com" xmlns="http://www.w3.org/2001/XMLSchema">
+   <import namespace="http://dto.estafetalabel.webservices.estafeta.com"/>
+   <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+   <complexType name="ArrayOf_tns1_LabelResultList">
+    <complexContent>
+     <restriction base="soapenc:Array">
+      <attribute ref="soapenc:arrayType" wsdl:arrayType="tns1:LabelResultList[]"/>
+     </restriction>
+    </complexContent>
+   </complexType>
+   <complexType name="ArrayOf_tns1_WaybillEstafeta">
+    <complexContent>
+     <restriction base="soapenc:Array">
+      <attribute ref="soapenc:arrayType" wsdl:arrayType="tns1:WaybillEstafeta[]"/>
+     </restriction>
+    </complexContent>
+   </complexType>
+   <complexType name="ArrayOf_tns1_LabelListIndividual">
+    <complexContent>
+     <restriction base="soapenc:Array">
+      <attribute ref="soapenc:arrayType" wsdl:arrayType="tns1:LabelListIndividual[]"/>
+     </restriction>
+    </complexContent>
+   </complexType>
+   <complexType name="ArrayOf_tns1_WaybillEstafetaData">
+    <complexContent>
+     <restriction base="soapenc:Array">
+      <attribute ref="soapenc:arrayType" wsdl:arrayType="tns1:WaybillEstafetaData[]"/>
+     </restriction>
+    </complexContent>
+   </complexType>
+  </schema>
+ </wsdl:types>
+
+   <wsdl:message name="createSimpleLabelImageDataResponse">
+
+      <wsdl:part name="createSimpleImageDataLabelReturn" type="tns1:EstafetaLabelImageDataSimpleResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createSimpleLabelResponse">
+
+      <wsdl:part name="createSimpleLabelReturn" type="tns1:EstafetaLabelSimpleResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createSimpleLabelRequest">
+
+      <wsdl:part name="in0" type="tns1:EstafetaLabelSimpleRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createSimpleLabelImageDataRequest">
+
+      <wsdl:part name="in0" type="tns1:EstafetaLabelSimpleRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createLabelVolRequest">
+
+      <wsdl:part name="in0" type="tns1:EstafetaLabelRequestVol"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createLabelIndividualRequest">
+
+      <wsdl:part name="in0" type="tns1:EstafetaLabelRequestVol"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createLabelExtendedRequest">
+
+      <wsdl:part name="in0" type="tns1:EstafetaLabelRequestExtended"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createLabelVolRRequest">
+
+      <wsdl:part name="in0" type="tns1:EstafetaLabelRequestVol"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="reprintLabelRequest">
+
+      <wsdl:part name="in0" type="tns1:EstafetaReprintLabelRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="reprintLabelResponse">
+
+      <wsdl:part name="reprintLabelReturn" type="tns1:EstafetaLabelResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createLabelIndividualRResponse">
+
+      <wsdl:part name="createLabelIndividualReturn" type="tns1:EstafetaLabelResponseIndividual"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createLabelRequest">
+
+      <wsdl:part name="in0" type="tns1:EstafetaLabelRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createSimpleLabelImageRequest">
+
+      <wsdl:part name="in0" type="tns1:EstafetaLabelSimpleRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createLabelVolResponse">
+
+      <wsdl:part name="createLabelVolReturn" type="tns1:EstafetaLabelResponseVol"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createLabelVolRResponse">
+
+      <wsdl:part name="createLabelVolReturn" type="tns1:EstafetaLabelResponseVol"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createLabelExtendedResponse">
+
+      <wsdl:part name="createLabelExtendedReturn" type="tns1:EstafetaLabelResponseExtended"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createSimpleLabelImageResponse">
+
+      <wsdl:part name="createSimpleImageLabelReturn" type="tns1:EstafetaLabelImageSimpleResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createLabelIndividualResponse">
+
+      <wsdl:part name="createLabelIndividualReturn" type="tns1:EstafetaLabelResponseIndividual"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createLabelIndividualRRequest">
+
+      <wsdl:part name="in0" type="tns1:EstafetaLabelRequestVol"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="createLabelResponse">
+
+      <wsdl:part name="createLabelReturn" type="tns1:EstafetaLabelResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:portType name="EstafetaLabel">
+
+      <wsdl:operation name="createLabel" parameterOrder="in0">
+
+         <wsdl:input message="impl:createLabelRequest" name="createLabelRequest"/>
+
+         <wsdl:output message="impl:createLabelResponse" name="createLabelResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="reprintLabel" parameterOrder="in0">
+
+         <wsdl:input message="impl:reprintLabelRequest" name="reprintLabelRequest"/>
+
+         <wsdl:output message="impl:reprintLabelResponse" name="reprintLabelResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createSimpleLabel" parameterOrder="in0">
+
+         <wsdl:input message="impl:createSimpleLabelRequest" name="createSimpleLabelRequest"/>
+
+         <wsdl:output message="impl:createSimpleLabelResponse" name="createSimpleLabelResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createSimpleLabelImage" parameterOrder="in0">
+
+         <wsdl:input message="impl:createSimpleLabelImageRequest" name="createSimpleLabelImageRequest"/>
+
+         <wsdl:output message="impl:createSimpleLabelImageResponse" name="createSimpleLabelImageResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createLabelVol" parameterOrder="in0">
+
+         <wsdl:input message="impl:createLabelVolRequest" name="createLabelVolRequest"/>
+
+         <wsdl:output message="impl:createLabelVolResponse" name="createLabelVolResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createLabelIndividual" parameterOrder="in0">
+
+         <wsdl:input message="impl:createLabelIndividualRequest" name="createLabelIndividualRequest"/>
+
+         <wsdl:output message="impl:createLabelIndividualResponse" name="createLabelIndividualResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createLabelVolR" parameterOrder="in0">
+
+         <wsdl:input message="impl:createLabelVolRRequest" name="createLabelVolRRequest"/>
+
+         <wsdl:output message="impl:createLabelVolRResponse" name="createLabelVolRResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createLabelIndividualR" parameterOrder="in0">
+
+         <wsdl:input message="impl:createLabelIndividualRRequest" name="createLabelIndividualRRequest"/>
+
+         <wsdl:output message="impl:createLabelIndividualRResponse" name="createLabelIndividualRResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createLabelExtended" parameterOrder="in0">
+
+         <wsdl:input message="impl:createLabelExtendedRequest" name="createLabelExtendedRequest"/>
+
+         <wsdl:output message="impl:createLabelExtendedResponse" name="createLabelExtendedResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createSimpleLabelImageData" parameterOrder="in0">
+
+         <wsdl:input message="impl:createSimpleLabelImageDataRequest" name="createSimpleLabelImageDataRequest"/>
+
+         <wsdl:output message="impl:createSimpleLabelImageDataResponse" name="createSimpleLabelImageDataResponse"/>
+
+      </wsdl:operation>
+
+   </wsdl:portType>
+
+   <wsdl:binding name="EstafetaLabelWSSoapBinding" type="impl:EstafetaLabel">
+
+      <wsdlsoap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+      <wsdl:operation name="createLabel">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="createLabelRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="createLabelResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="reprintLabel">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="reprintLabelRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="reprintLabelResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createSimpleLabel">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="createSimpleLabelRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="createSimpleLabelResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createSimpleLabelImage">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="createSimpleLabelImageRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="createSimpleLabelImageResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createLabelVol">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="createLabelVolRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="createLabelVolResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createLabelIndividual">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="createLabelIndividualRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="createLabelIndividualResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createLabelVolR">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="createLabelVolRRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="createLabelVolRResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createLabelIndividualR">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="createLabelIndividualRRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="createLabelIndividualRResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createLabelExtended">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="createLabelExtendedRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="createLabelExtendedResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="createSimpleLabelImageData">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="createSimpleLabelImageDataRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="createSimpleLabelImageDataResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://estafetalabel.webservices.estafeta.com" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+   </wsdl:binding>
+
+   <wsdl:service name="EstafetaLabelService">
+
+      <wsdl:port binding="impl:EstafetaLabelWSSoapBinding" name="EstafetaLabelWS">
+
+         <wsdlsoap:address location="https://label.estafeta.com/EstafetaLabel20/services/EstafetaLabelWS"/>
+
+      </wsdl:port>
+
+   </wsdl:service>
+
+</wsdl:definitions>

@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://www.estafeta.com/" xmlns:s1="http://www.estafeta.com/AbstractTypes" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" targetNamespace="http://www.estafeta.com/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://www.estafeta.com/">
+      <s:element name="FrecuenciaCotizador">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="idusuario" type="s:int" />
+            <s:element minOccurs="0" maxOccurs="1" name="usuario" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="contra" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="esFrecuencia" type="s:boolean" />
+            <s:element minOccurs="1" maxOccurs="1" name="esLista" type="s:boolean" />
+            <s:element minOccurs="0" maxOccurs="1" name="tipoEnvio" type="tns:TipoEnvio" />
+            <s:element minOccurs="0" maxOccurs="1" name="datosOrigen" type="tns:ArrayOfString" />
+            <s:element minOccurs="0" maxOccurs="1" name="datosDestino" type="tns:ArrayOfString" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="TipoEnvio">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="EsPaquete" type="s:boolean" />
+          <s:element minOccurs="1" maxOccurs="1" name="Largo" type="s:double" />
+          <s:element minOccurs="1" maxOccurs="1" name="Peso" type="s:double" />
+          <s:element minOccurs="1" maxOccurs="1" name="Alto" type="s:double" />
+          <s:element minOccurs="1" maxOccurs="1" name="Ancho" type="s:double" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfString">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="string" nillable="true" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="FrecuenciaCotizadorResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="FrecuenciaCotizadorResult" type="tns:ArrayOfRespuesta" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfRespuesta">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="Respuesta" nillable="true" type="tns:Respuesta" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Respuesta">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="TipoEnvio" type="tns:TipoEnvio" />
+          <s:element minOccurs="0" maxOccurs="1" name="TipoServicio" type="tns:ArrayOfTipoServicio" />
+          <s:element minOccurs="0" maxOccurs="1" name="Colonias" type="tns:Colonia" />
+          <s:element minOccurs="0" maxOccurs="1" name="ModalidadEntrega" type="tns:ModalidadEntrega" />
+          <s:element minOccurs="0" maxOccurs="1" name="DiasEntrega" type="tns:DiasEntrega" />
+          <s:element minOccurs="0" maxOccurs="1" name="CostoReexpedicion" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ExistenteSiglaOri" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ExistenteSiglaDes" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Destino" type="tns:Destino" />
+          <s:element minOccurs="0" maxOccurs="1" name="Origen" type="tns:Origen" />
+          <s:element minOccurs="0" maxOccurs="1" name="Error" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="MensajeError" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="CodigoPosOri" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfTipoServicio">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="TipoServicio" nillable="true" type="tns:TipoServicio" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="TipoServicio">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="DescripcionServicio" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="TipoEnvioRes" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="AplicaCotizacion" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="TarifaBase" type="s:double" />
+          <s:element minOccurs="1" maxOccurs="1" name="CCTarifaBase" type="s:double" />
+          <s:element minOccurs="1" maxOccurs="1" name="CargosExtra" type="s:double" />
+          <s:element minOccurs="1" maxOccurs="1" name="SobrePeso" type="s:double" />
+          <s:element minOccurs="1" maxOccurs="1" name="CCSobrePeso" type="s:double" />
+          <s:element minOccurs="1" maxOccurs="1" name="CostoTotal" type="s:double" />
+          <s:element minOccurs="1" maxOccurs="1" name="Peso" type="s:double" />
+          <s:element minOccurs="0" maxOccurs="1" name="AplicaServicio" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Colonia">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Colonias" type="tns:ArrayOfString" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ModalidadEntrega">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="OcurreForzoso" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Frecuencia" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="DiasEntrega">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Lunes" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Martes" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Miercoles" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Jueves" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Viernes" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Sabado" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Domingo" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Destino">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="CpDestino" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Plaza1" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Municipio" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Estado" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Origen">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="CodigoPosOri" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="PlazaOri" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="MunicipioOri" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="EstadoOri" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="FrecuenciaCotizadorPlano">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="idusuario" type="s:int" />
+            <s:element minOccurs="0" maxOccurs="1" name="usuario" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="contra" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="esFrecuencia" type="s:boolean" />
+            <s:element minOccurs="1" maxOccurs="1" name="esLista" type="s:boolean" />
+            <s:element minOccurs="1" maxOccurs="1" name="espaquete" type="s:boolean" />
+            <s:element minOccurs="1" maxOccurs="1" name="peso" type="s:double" />
+            <s:element minOccurs="1" maxOccurs="1" name="largo" type="s:double" />
+            <s:element minOccurs="1" maxOccurs="1" name="alto" type="s:double" />
+            <s:element minOccurs="1" maxOccurs="1" name="ancho" type="s:double" />
+            <s:element minOccurs="0" maxOccurs="1" name="datosOrigen" type="tns:ArrayOfString" />
+            <s:element minOccurs="0" maxOccurs="1" name="datosDestino" type="tns:ArrayOfString" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="FrecuenciaCotizadorPlanoResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="FrecuenciaCotizadorPlanoResult" type="tns:ArrayOfRespuesta" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="ArrayOfRespuesta" nillable="true" type="tns:ArrayOfRespuesta" />
+    </s:schema>
+    <s:schema targetNamespace="http://www.estafeta.com/AbstractTypes">
+      <s:import namespace="http://schemas.xmlsoap.org/soap/encoding/" />
+      <s:complexType name="StringArray">
+        <s:complexContent mixed="false">
+          <s:restriction base="soapenc:Array">
+            <s:sequence>
+              <s:element minOccurs="0" maxOccurs="unbounded" name="String" type="s:string" />
+            </s:sequence>
+          </s:restriction>
+        </s:complexContent>
+      </s:complexType>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="FrecuenciaCotizadorSoapIn">
+    <wsdl:part name="parameters" element="tns:FrecuenciaCotizador" />
+  </wsdl:message>
+  <wsdl:message name="FrecuenciaCotizadorSoapOut">
+    <wsdl:part name="parameters" element="tns:FrecuenciaCotizadorResponse" />
+  </wsdl:message>
+  <wsdl:message name="FrecuenciaCotizadorPlanoSoapIn">
+    <wsdl:part name="parameters" element="tns:FrecuenciaCotizadorPlano" />
+  </wsdl:message>
+  <wsdl:message name="FrecuenciaCotizadorPlanoSoapOut">
+    <wsdl:part name="parameters" element="tns:FrecuenciaCotizadorPlanoResponse" />
+  </wsdl:message>
+  <wsdl:message name="FrecuenciaCotizadorPlanoHttpPostIn">
+    <wsdl:part name="idusuario" type="s:string" />
+    <wsdl:part name="usuario" type="s:string" />
+    <wsdl:part name="contra" type="s:string" />
+    <wsdl:part name="esFrecuencia" type="s:string" />
+    <wsdl:part name="esLista" type="s:string" />
+    <wsdl:part name="espaquete" type="s:string" />
+    <wsdl:part name="peso" type="s:string" />
+    <wsdl:part name="largo" type="s:string" />
+    <wsdl:part name="alto" type="s:string" />
+    <wsdl:part name="ancho" type="s:string" />
+    <wsdl:part name="datosOrigen" type="s1:StringArray" />
+    <wsdl:part name="datosDestino" type="s1:StringArray" />
+  </wsdl:message>
+  <wsdl:message name="FrecuenciaCotizadorPlanoHttpPostOut">
+    <wsdl:part name="Body" element="tns:ArrayOfRespuesta" />
+  </wsdl:message>
+  <wsdl:portType name="ServiceSoap">
+    <wsdl:operation name="FrecuenciaCotizador">
+      <wsdl:input message="tns:FrecuenciaCotizadorSoapIn" />
+      <wsdl:output message="tns:FrecuenciaCotizadorSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="FrecuenciaCotizadorPlano">
+      <wsdl:input message="tns:FrecuenciaCotizadorPlanoSoapIn" />
+      <wsdl:output message="tns:FrecuenciaCotizadorPlanoSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:portType name="ServiceHttpPost">
+    <wsdl:operation name="FrecuenciaCotizadorPlano">
+      <wsdl:input message="tns:FrecuenciaCotizadorPlanoHttpPostIn" />
+      <wsdl:output message="tns:FrecuenciaCotizadorPlanoHttpPostOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="ServiceSoap" type="tns:ServiceSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="FrecuenciaCotizador">
+      <soap:operation soapAction="http://www.estafeta.com/FrecuenciaCotizador" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="FrecuenciaCotizadorPlano">
+      <soap:operation soapAction="http://www.estafeta.com/FrecuenciaCotizadorPlano" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="ServiceSoap12" type="tns:ServiceSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="FrecuenciaCotizador">
+      <soap12:operation soapAction="http://www.estafeta.com/FrecuenciaCotizador" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="FrecuenciaCotizadorPlano">
+      <soap12:operation soapAction="http://www.estafeta.com/FrecuenciaCotizadorPlano" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="ServiceHttpPost" type="tns:ServiceHttpPost">
+    <http:binding verb="POST" />
+    <wsdl:operation name="FrecuenciaCotizadorPlano">
+      <http:operation location="/FrecuenciaCotizadorPlano" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="Service">
+    <wsdl:port name="ServiceSoap" binding="tns:ServiceSoap">
+      <soap:address location="http://frecuenciacotizador.estafeta.com/Service.asmx" />
+    </wsdl:port>
+    <wsdl:port name="ServiceSoap12" binding="tns:ServiceSoap12">
+      <soap12:address location="http://frecuenciacotizador.estafeta.com/Service.asmx" />
+    </wsdl:port>
+    <wsdl:port name="ServiceHttpPost" binding="tns:ServiceHttpPost">
+      <http:address location="http://frecuenciacotizador.estafeta.com/Service.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

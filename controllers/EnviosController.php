@@ -15,6 +15,8 @@ use app\models\Fedex;
 use app\models\Calendario;
 use app\models\EnviosObject;
 use yii\helpers\Url;
+use app\_360Utils\CotizadorPaquete;
+use app\_360Utils\CotizadorSobre;
 
 
 class EnviosController extends Controller{
@@ -202,6 +204,108 @@ class EnviosController extends Controller{
         $fedex = new Fedex($tipoPaquete);
         
         return $fedex->getFedex($cpFrom, $cpTo, $countryCodeFrom, $countryCodeTo, $paquetes,$tipoPaquete);
+
+    }
+
+    /**
+     * Action para la cotizacion
+     */
+    public function actionCotizarV2(){
+        $request = Yii::$app->request;
+        $params = $request->bodyParams;
+
+        $cpFrom = $request->getBodyParam("cp_from");
+        $cpTo = $request->getBodyParam("cp_to");
+        $countryCodeFrom = $request->getBodyParam("country_code_from");
+        $countryCodeTo = $request->getBodyParam("country_code_to");
+        $tipoPaquete = $request->getBodyParam("tipo_paquete");
+        $paquetesRequest = $request->getBodyParam("dimensiones_paquete");
+        $dimenSobre = $request->getBodyParam("dimensiones_sobre");
+        $paquetes = [];
+
+        if(!$tipoPaquete){
+            throw new HttpException(500, "No se envio el tipo de paquete");
+        }
+
+        if(strtoupper($tipoPaquete)=="SOBRE"){
+            $paquetes[]=[
+                "num_peso"=>$dimenSobre["num_peso"],
+                "num_alto"=>0,
+                "num_ancho"=>0,
+                "num_largo"=>0
+            ];
+        }else{
+            foreach($paquetesRequest as $paquete){
+                if($paquete["num_paquetes"]>1){
+                    for($i=0; $i<$paquete["num_paquetes"]; $i++){
+                        $paquetes[]=[
+                            "num_peso"=>$paquete["num_peso"],
+                            "num_alto"=>$paquete["num_alto"],
+                            "num_ancho"=>$paquete["num_ancho"],
+                            "num_largo"=>$paquete["num_largo"]
+                        ];
+                    }
+                }else{
+                    $paquetes[]=[
+                        "num_peso"=>$paquete["num_peso"],
+                        "num_alto"=>$paquete["num_alto"],
+                        "num_ancho"=>$paquete["num_ancho"],
+                        "num_largo"=>$paquete["num_largo"]
+                    ];
+                }
+                
+            }
+        }
+
+        $respuesta = [];
+        for($i = 0; $i<3; $i++){
+            $eo = new EnviosObject();
+            $eo->cpOrigen = "54710";
+            $eo->cpDestino = "57349";
+            $eo->precioOriginal = 258+$i;
+            $eo->precioCliente = 258+($i+1);
+            $eo->mensajeria = "FEDEX";
+            $eo->fechaEntrega = "2018-11-26";    
+            $eo->tipoEnvio = "Express";
+            $eo->urlImagen = Yii::$app->urlManager->createAbsoluteUrl([''])."images/fedex.jpg";
+
+            $respuesta[] = $eo;
+        }
+
+        if(strtoupper($tipoPaquete)=="SOBRE"){
+            $json = [
+                "cp_origen"=>$cpFrom,
+                "pais_origen"=>$countryCodeFrom,
+                "estado_origen"=>"EM",
+                "cp_destino"=>$cpTo,
+                "pais_destino"=>$countryCodeTo,
+                "estado_destino"=>"EM",
+                "peso_kilogramos"=>"0.5"
+            ];
+            $cotizador = new CotizadorSobre();
+            return $cotizador->realizaCotizacion($json); // Agregar arreglo con paquetes
+        }else{
+
+            $json = [
+                "cp_origen"=>$cpFrom,
+                "pais_origen"=>$countryCodeFrom,
+                "estado_origen"=>"EM",
+                "cp_destino"=>$cpTo,
+                "pais_destino"=>$countryCodeTo,
+                "estado_destino"=>"EM",
+                "peso_kilogramos"=>"0.5"
+            ];
+            $cotizador = new CotizadorPaquete();
+            return $cotizador->realizaCotizacion($json);
+        }
+
+        
+
+        
+
+        // $fedex = new Fedex($tipoPaquete);
+        
+        // return $fedex->getFedex($cpFrom, $cpTo, $countryCodeFrom, $countryCodeTo, $paquetes,$tipoPaquete);
 
     }
 

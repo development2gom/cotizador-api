@@ -17,6 +17,7 @@ use app\models\EnviosObject;
 use yii\helpers\Url;
 use app\_360Utils\CotizadorPaquete;
 use app\_360Utils\CotizadorSobre;
+use app\models\Utils;
 
 
 class EnviosController extends Controller{
@@ -293,9 +294,15 @@ class EnviosController extends Controller{
                 "cp_destino"=>$cpTo,
                 "pais_destino"=>$countryCodeTo,
                 "estado_destino"=>"EM",
-                "peso_kilogramos"=>"0.5"
+                "peso_kilogramos"=>"0.5",
+                "largo_cm"=>2,
+                "ancho_cm"=>1,
+                "alto_cm"=>1,
+                "fecha" =>Utils::getFechaActual(),
+
             ];
             $cotizador = new CotizadorPaquete();
+            //$json->cp_origen, $json->estado_origen, $json->pais_origen, $json->cp_destino, $json->estado_destino , $json->pais_destino, $fecha, $json->peso_kilogramos, $json->largo_cm, $json->ancho_cm, $json->alto_cm
             return $cotizador->realizaCotizacion($json);
         }
 

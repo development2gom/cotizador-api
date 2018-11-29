@@ -286,7 +286,7 @@ class EnviosController extends Controller{
             return $cotizador->realizaCotizacion($json); // Agregar arreglo con paquetes
         }else{
 
-            $json = [
+            $json = (object)[
                 "cp_origen"=>$cpFrom,
                 "pais_origen"=>$countryCodeFrom,
                 "estado_origen"=>"EM",

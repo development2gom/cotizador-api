@@ -273,7 +273,7 @@ class EnviosController extends Controller{
         }
 
         if(strtoupper($tipoPaquete)=="SOBRE"){
-            $json = [
+            $json = (object)[
                 "cp_origen"=>$cpFrom,
                 "pais_origen"=>$countryCodeFrom,
                 "estado_origen"=>"EM",

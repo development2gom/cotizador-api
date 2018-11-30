@@ -275,16 +275,26 @@ class EnviosController extends Controller{
 
         if(strtoupper($tipoPaquete)=="SOBRE"){
             $json = (object)[
+                // "cp_origen"=>$cpFrom,
+                // "pais_origen"=>$countryCodeFrom,
+                // "estado_origen"=>"EM",
+                // "cp_destino"=>$cpTo,
+                // "pais_destino"=>$countryCodeTo,
+                // "estado_destino"=>"EM",
+                // "peso_kilogramos"=>"0.5"
                 "cp_origen"=>$cpFrom,
                 "pais_origen"=>$countryCodeFrom,
                 "estado_origen"=>"EM",
                 "cp_destino"=>$cpTo,
                 "pais_destino"=>$countryCodeTo,
                 "estado_destino"=>"EM",
-                "peso_kilogramos"=>"0.5"
+                "peso_kilogramos"=>"0.5",
+                "largo_cm"=>2,
+                "ancho_cm"=>1,
+                "alto_cm"=>1,
             ];
             $cotizador = new CotizadorSobre();
-            return $cotizador->realizaCotizacion($json); // Agregar arreglo con paquetes
+            return $cotizador->realizaCotizacion($json,  $paquetes); // Agregar arreglo con paquetes
         }else{
 
             $json = (object)[

@@ -116,7 +116,7 @@ class OpenPay{
 			'customer' => $cliente,
             'order_id' => $this->orderId,
             'due_date' => date('c', strtotime(self::TIEMPO_VIDA_TICKET_OPENPAY)),
-            'currency'=>$this->currency
+            //'currency'=>"MXN"
         ];
 
         try{

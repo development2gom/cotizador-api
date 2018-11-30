@@ -314,7 +314,7 @@ class WrkEnvios extends \yii\db\ActiveRecord
             if(strtoupper($tipoEmpaque->uddi)=="SOBRE"){
                 $datosSobre = new WrkSobres();
                 $datosSobre->id_envio = $this->id_envio;
-                $datosSobre->num_peso =$sobre["num_peso"];
+                $datosSobre->num_peso =$sobre["num_peso"]/1000;
                 $datosSobre->save();
                
             }else{

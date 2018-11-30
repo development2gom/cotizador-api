@@ -91,12 +91,14 @@ class UpsServices{
     var $URL_SERVICE = 'https://wwwcie.ups.com/rest/';
 
 
-    function cotizarEnvioDocumento($cp_origen,$stado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $peso_kilos){
+    function cotizarEnvioDocumento($cp_origen,$stado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $paquetes){
         $servicios = [self::S_AIR_1DAY,self::S_AIR_2DAY,self::S_GROUND];
         $responses = [];
 
+        $paquete = $paquetes[0];
+
         //Cambia el peso de kilos a libras
-        $peso = $peso_kilos * 2.20462;
+        $peso = $paquete['num_peso'] * 2.20462;
 
         foreach($servicios as $item){
             $res = $this->cotizarEnvioDocumentoInterno($item,$cp_origen,$stado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $peso);
@@ -109,17 +111,20 @@ class UpsServices{
     }
 
 
-    function cotizarEnvioPaquete($cp_origen,$stado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $peso_kilos, $largo_cm,$ancho_cm,$alto_cm){
+    function cotizarEnvioPaquete($cp_origen,$stado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $paquetes){
         $servicios = [self::S_AIR_1DAY,self::S_AIR_2DAY,self::S_GROUND, self::S_AIR_1DAYEARLYAM,self::S_3DAYSELECT];
         $responses = [];
 
+        //TODO contemplar varios paquetes
+        $paquete = $paquetes[0];
+
         //Cambia el peso de kilos a libras
-        $peso = $peso_kilos * 2.20462;
+        $peso = $paquete['num_peso'] * 2.20462;
 
         //Cambia el tamaño de cm a pulgadas
-        $largo = $largo_cm * 0.393701;
-        $ancho = $ancho_cm * 0.393701;
-        $alto  =  $alto_cm * 0.393701;
+        $largo = $paquete['num_largo'] * 0.393701;
+        $ancho = $paquete['num_ancho'] * 0.393701;
+        $alto  =  $paquete['num_alto'] * 0.393701;
 
 
         foreach($servicios as $item){
@@ -278,9 +283,9 @@ class UpsServices{
         $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["UnitOfMeasurement"]["Code"] = "IN";
         $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["UnitOfMeasurement"]["Description"] = "inches";
                     
-        $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["Length"] = "" . $largo;
-        $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["Width"] = "" . $ancho;
-        $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["Height"] = "" . $alto;
+        $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["Length"] = "" . ceil($largo);
+        $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["Width"] = "" . ceil($ancho);
+        $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["Height"] = "" . ceil($alto);
                   
         $json["RateRequest"]["Shipment"]["Package"]["PackageWeight"] = [];
         $json["RateRequest"]["Shipment"]["Package"]["PackageWeight"]["UnitOfMeasurement"] = [];

@@ -84,22 +84,29 @@ class FedexServices{
     }
 
 
-    function cotizarEnvioDocumento($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, $peso, $montoSeguro = false){
+    function cotizarEnvioDocumento($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, $paquetes, $montoSeguro = false){
         //Cotiza un envio de documento
-        return $this->cotizarEnvio($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, 'FEDEX_ENVELOPE', $peso, 0,0,0, $montoSeguro );
+        return $this->cotizarEnvio($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, 'FEDEX_ENVELOPE', $paquetes, $montoSeguro );
     }
 
-    function cotizarEnvioPaquete($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, $peso, $largo, $ancho, $alto, $montoSeguro = false){
+    function cotizarEnvioPaquete($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, $paquetes, $montoSeguro = false){
         //Cotiza un envio de documento
-        return $this->cotizarEnvio($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, 'YOUR_PACKAGING', $peso, $largo, $ancho, $alto, $montoSeguro );
+        return $this->cotizarEnvio($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, 'YOUR_PACKAGING', $paquetes, $montoSeguro );
     }
 
 
 
-    private function cotizarEnvio($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, $servicePacking, $peso, $largo = 0, $ancho = 0, $alto = 0, $montoSeguro = false){
+    private function cotizarEnvio($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, $servicePacking, $paquetes, $montoSeguro = false){
 
         $preferedCurrency = 'MXN';
         $pickUp = 'REGULAR_PICKUP';
+
+        //TODO manejar varios paquetes
+        $largo = $paquetes[0]['num_largo'];
+        $ancho = $paquetes[0]['num_largo'];
+        $alto = $paquetes[0]['num_largo'];
+        $peso = $paquetes[0]['num_peso'];
+        
        
     
 

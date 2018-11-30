@@ -17,7 +17,7 @@ class CotizadorSobre{
       const USE_UPS   = true; //Habilita UPS
 
 
-    function realizaCotizacion($json){
+    function realizaCotizacion($json,$paquetes){
        
         //Resultado de la busqueda
         $data = [];
@@ -25,19 +25,19 @@ class CotizadorSobre{
        
        // UTILIZA FEDEX ---------------------------------
         if(self::USE_FEDEX){
-            $res = $this->cotizaDocumentoFedex($json);
+            $res = $this->cotizaDocumentoFedex($json,$paquetes);
             $data = array_merge($data, $res);
             
         }
 
         // UTILIZA 2GOM ---------------------------------
         if(self::USE_DGOM){
-            $res = $this->cotizaDocumentoDGOM($json);
+            $res = $this->cotizaDocumentoDGOM($json,$paquetes);
             $data = array_merge($data, $res);
         }
 
         if(self::USE_UPS){
-            $res = $this->cotizaDocumentoUPS($json);
+            $res = $this->cotizaDocumentoUPS($json,$paquetes);
             if($res != null){
                 $data = array_merge($data, $res);
             }
@@ -80,10 +80,10 @@ class CotizadorSobre{
 
 
     // ----------------------------- COTIZACION UPS ----------------------------------------
-    private function cotizaDocumentoUPS($json){
+    private function cotizaDocumentoUPS($json, $paquetes){
         $ups = new UpsServices();
         $fecha = "";
-        $cotizaciones = $ups->cotizarEnvioDocumento($json->cp_origen, $json->estado_origen, $json->pais_origen, $json->cp_destino, $json->estado_destino , $json->pais_destino, $fecha, $json->peso_kilogramos);
+        $cotizaciones = $ups->cotizarEnvioDocumento($json->cp_origen, $json->estado_origen, $json->pais_origen, $json->cp_destino, $json->estado_destino , $json->pais_destino, $fecha, $paquetes);
 
         return $cotizaciones;
     }
@@ -91,7 +91,7 @@ class CotizadorSobre{
 
 //---------------------------------- COTIZACION DE FEDEX -----------------------------------
 
-    private function cotizaDocumentoFedex($json){
+    private function cotizaDocumentoFedex($json,$paquetes){
         // Metodos de envio disponibles
 
         $fedex = new FedexServices();
@@ -117,7 +117,7 @@ class CotizadorSobre{
         foreach($data['options'] as $item){
             $service = $item->Service;
 
-            $cotizacion = $fedex->cotizarEnvioDocumento($service, $json->cp_origen, $json->pais_origen, $json->cp_destino, $json->pais_destino, $fecha, $json->peso_kilogramos);
+            $cotizacion = $fedex->cotizarEnvioDocumento($service, $json->cp_origen, $json->pais_origen, $json->cp_destino, $json->pais_destino, $fecha, $paquetes);
             if($cotizacion){
                 array_push($cotizaciones, $cotizacion);
             }

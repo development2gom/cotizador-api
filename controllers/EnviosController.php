@@ -298,12 +298,22 @@ class EnviosController extends Controller{
                 "largo_cm"=>2,
                 "ancho_cm"=>1,
                 "alto_cm"=>1,
-                "fecha" =>Utils::getFechaActual(),
+                // "cp_origen"=>"90210",
+                // "pais_origen"=>"US",
+                // "estado_origen"=>"CA",
+                // "cp_destino"=>"84537",
+                // "pais_destino"=>"US",
+                // "estado_destino"=>"UT",
+                // "peso_kilogramos"=>"0.5",
+                // "alto_cm"=>"5",
+                // "ancho_cm"=>"4",
+                // "largo_cm"=>"5"
+                
 
             ];
             $cotizador = new CotizadorPaquete();
             //$json->cp_origen, $json->estado_origen, $json->pais_origen, $json->cp_destino, $json->estado_destino , $json->pais_destino, $fecha, $json->peso_kilogramos, $json->largo_cm, $json->ancho_cm, $json->alto_cm
-            return $cotizador->realizaCotizacion($json);
+            return $cotizador->realizaCotizacion($json, $paquetes);
         }
 
         

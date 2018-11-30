@@ -20,7 +20,7 @@ class WrkEnviosSearch extends WrkEnvios
         return [
             [['id_envio', 'id_origen', 'id_destino', 'id_proveedor', 'id_pago', 'id_cliente', 'id_tipo_empaque', 'b_habilitado'], 'integer'],
             [['num_costo_envio', 'num_impuesto', 'num_subtotal'], 'number'],
-            [['txt_folio', 'txt_tipo', 'uddi'], 'safe'],
+            [['txt_folio', 'txt_tipo', 'uddi', 'txt_tracking_number', 'params'], 'safe'],
         ];
     }
 
@@ -75,7 +75,8 @@ class WrkEnviosSearch extends WrkEnvios
 
         $query->andFilterWhere(['like', 'txt_folio', $this->txt_folio])
             ->andFilterWhere(['like', 'txt_tipo', $this->txt_tipo])
-            ->andFilterWhere(['like', 'uddi', $this->uddi]);            
+            ->andFilterWhere(['like', 'uddi', $this->uddi])
+            ->andFilterWhere(['like', 'txt_tracking_number', $this->txt_tracking_number]);                 
 
         return $dataProvider;
     }

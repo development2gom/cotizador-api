@@ -231,7 +231,7 @@ class EnviosController extends Controller{
 
         if(strtoupper($tipoPaquete)=="SOBRE"){
             $paquetes[]=[
-                "num_peso"=>$dimenSobre["num_peso"],
+                "num_peso"=>$dimenSobre["num_peso"]/1000,
                 "num_alto"=>0,
                 "num_ancho"=>0,
                 "num_largo"=>0

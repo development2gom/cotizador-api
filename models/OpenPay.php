@@ -158,7 +158,7 @@ class OpenPay{
 			'amount' => ( float )$this->amount,
 			'description' => $this->description,
             'order_id' => $this->orderId,
-            'currency'=>$this->currency
+            'currency'=>$this->currency,
 				// 'use_card_points' => $_POST["use_card_points"], // Opcional, si estamos usando puntos
 			'device_session_id' => $deviceId
         );

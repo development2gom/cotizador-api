@@ -87,7 +87,7 @@ class WrkDestinoSearch extends WrkDestino
 
     public function buscarDirecciones($params)
     {
-        $query = WrkDestino::find()->groupBy(new Expression("CONCAT_WS(' ', txt_calle, num_exterior, num_interior)"));
+        $query = WrkDestino::find()->groupBy(new Expression("CONCAT_WS(' ', txt_calle, num_exterior, num_interior)"))->where("txt_calle<>''");
 
         // add conditions that should always apply here
 

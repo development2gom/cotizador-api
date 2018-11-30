@@ -87,7 +87,7 @@ class WrkOrigenSearch extends WrkOrigen
 
     public function buscarDirecciones($params)
     {
-        $query = WrkOrigen::find()->groupBy(new Expression("CONCAT_WS(' ', txt_calle, num_exterior, num_interior)"));
+        $query = WrkOrigen::find()->groupBy(new Expression("CONCAT_WS(' ', txt_calle, num_exterior, num_interior)"))->where("txt_calle<>''");;
 
         // add conditions that should always apply here
 

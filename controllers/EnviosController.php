@@ -18,6 +18,7 @@ use yii\helpers\Url;
 use app\_360Utils\CotizadorPaquete;
 use app\_360Utils\CotizadorSobre;
 use app\models\Utils;
+use app\models\WrkEmpaque;
 
 
 class EnviosController extends Controller{
@@ -350,7 +351,21 @@ class EnviosController extends Controller{
 
         $origen = $envio->origen;
         $destino = $envio->destino;
-        $paquetes = $envio->empaque;
+        if($envio->id_tipo_empaque==2){
+            $paquetes = $envio->empaque;
+        }else{
+            $paquetes = [];
+            foreach($envio->sobres as $key=>$sobre){
+                $pa = new WrkEmpaque();
+                $pa->num_peso = $sobre->num_peso;
+                $pa->num_alto = 0;
+                $pa->num_ancho = 0;
+                $pa->num_largo = 0;
+                $paquetes[]= $pa;
+            }   
+            
+        }
+        
 
         // @TODO Generar el label de acuerdo al courier
         $fedex = new Fedex($envio->tipoEmpaque->uddi);

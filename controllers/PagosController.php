@@ -27,7 +27,7 @@ class PagosController extends Controller{
         $cliente = EntClientes::getClienteByUddi($uddiCliente);
         $envio = WrkEnvios::getEnvio($uddiEnvio);
 
-        $openPay = new OpenPay($cliente->id_cliente,$cliente->nombreCompleto, $cliente->txt_correo, "Ticket para envio", Utils::generateToken("tic_"), $envio->num_costo_envio, $envio->num_subtotal, $envio->id_envio);
+        $openPay = new OpenPay($cliente->id_cliente,$cliente->nombreCompleto, $cliente->txt_correo, "Ticket para envio", Utils::generateToken("tic_"), $envio->num_costo_envio, $envio->num_subtotal, $envio->id_envio,$envio->txt_currency);
 
         $respuesta = $openPay->generarTicket();
 
@@ -46,7 +46,7 @@ class PagosController extends Controller{
         $envio = WrkEnvios::getEnvio($uddiEnvio);
       
     
-        $openPay = new OpenPay($cliente->id_cliente,$cliente->nombreCompleto, $cliente->txt_correo, "Pago con tarjeta para envio", Utils::generateToken("oc_"), $envio->num_costo_envio, $envio->num_subtotal, $envio->id_envio);
+        $openPay = new OpenPay($cliente->id_cliente,$cliente->nombreCompleto, $cliente->txt_correo, "Pago con tarjeta para envio", Utils::generateToken("oc_"), $envio->num_costo_envio, $envio->num_subtotal, $envio->id_envio, $envio->txt_currency);
         $respuesta = $openPay->cargoTarjeta($tokenid, $deviceIdHiddenFieldName, $envio);
     
         return $respuesta;

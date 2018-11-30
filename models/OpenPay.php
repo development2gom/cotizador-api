@@ -17,10 +17,11 @@ class OpenPay{
     public $subTotal;
     public $errorObject;
     public $ordenCompra;
+    public $currency;
 
     const TIEMPO_VIDA_TICKET_OPENPAY = '+4 hours';
 
-    function __construct($idCliente,$clienteNombre, $clienteEmail, $description, $orderId, $amount, $subTotal, $idEnvio) {
+    function __construct($idCliente,$clienteNombre, $clienteEmail, $description, $orderId, $amount, $subTotal, $idEnvio, $currency) {
          $this->idEnvio = $idEnvio;
          $this->idCliente = $idCliente;
          $this->clienteNombre = $clienteNombre;
@@ -29,6 +30,7 @@ class OpenPay{
          $this->orderId = $orderId;
          $this->amount = $amount;
          $this->subTotal = $subTotal;
+         $this->currency = $currency;
     }
 
     public function getCliente(){
@@ -113,7 +115,8 @@ class OpenPay{
 			'description' => $this->description,
 			'customer' => $cliente,
             'order_id' => $this->orderId,
-            'due_date' => date('c', strtotime(self::TIEMPO_VIDA_TICKET_OPENPAY))
+            'due_date' => date('c', strtotime(self::TIEMPO_VIDA_TICKET_OPENPAY)),
+            'currency'=>$this->currency
         ];
 
         try{
@@ -154,7 +157,8 @@ class OpenPay{
 			'source_id' => $tokenId,
 			'amount' => ( float )$this->amount,
 			'description' => $this->description,
-			'order_id' => $this->orderId,
+            'order_id' => $this->orderId,
+            'currency'=>$this->currency
 				// 'use_card_points' => $_POST["use_card_points"], // Opcional, si estamos usando puntos
 			'device_session_id' => $deviceId
         );

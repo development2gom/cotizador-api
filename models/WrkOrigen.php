@@ -50,6 +50,7 @@ class WrkOrigen extends \yii\db\ActiveRecord
             [['num_codigo_postal', 'txt_pais'], 'required'],
             [['id_cliente', 'b_habilitado'], 'integer'],
             [['txt_referencia'], 'string'],
+            [['txt_estado_code'], 'safe'],
             [['txt_nombre', 'txt_nombre_ubicacion', 'txt_empresa', 'txt_puesto'], 'string', 'max' => 100],
             [['txt_pais', 'txt_calle', 'txt_estado', 'txt_municipio', 'txt_colonia'], 'string', 'max' => 50],
             [['num_codigo_postal'], 'string', 'max' => 11],

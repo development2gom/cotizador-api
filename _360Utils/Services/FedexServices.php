@@ -4,8 +4,10 @@
 namespace app\_360Utils\Services;
 
 use Yii;
-use app\models\WrkDatosCompras;
-use app\_360Utils\Cotizacion;
+
+use app\_360Utils\Entity\Cotizacion;
+use app\_360Utils\Entity\CompraEnvio;
+use app\_360Utils\Entity\ResultadoEnvio;
 
 class FedexServices{
 
@@ -198,6 +200,11 @@ class FedexServices{
                 $cotizacion->data         = $response;
                 $cotizacion->servicePacking  = $servicePacking;
 
+                if($deliveryDate != null &&   $deliveryDate != "N/A"){
+                    $cotizacion->deliveryDateStr = $deliveryDate;
+                }
+                
+
 
 
                 return $cotizacion;
@@ -213,23 +220,24 @@ class FedexServices{
 
 
 
-    function comprarEnvioDocumento(WrkDatosCompras $model){
+    function comprarEnvioDocumento(CompraEnvio $model){
         return $this->comprarEnvio($model,'FEDEX_ENVELOPE');
     }
 
-    function comprarEnvioPaquete(WrkDatosCompras $model){
+    function comprarEnvioPaquete(CompraEnvio $model){
         return $this->comprarEnvio($model,'YOUR_PACKAGING');
     }
 
-    private function comprarEnvio(WrkDatosCompras $model, $servicePacking){
-
-        //$servicePacking = 'FEDEX_ENVELOPE';
+    private function comprarEnvio(CompraEnvio $model, $servicePacking){
         $preferedCurrency = 'MXN';
         $pickUp = 'REGULAR_PICKUP';
-        $peso = $model->txt_peso;
-        $largo = $model->txt_largo;
-        $ancho = $model->txt_ancho;
-        $alto = $model->txt_alto;
+
+
+
+        $peso = $model->paquetes[0]->peso;
+        $largo = $model->paquetes[0]->largo;
+        $ancho = $model->paquetes[0]->ancho;
+        $alto = $model->paquetes[0]->alto;
 
 
         require_once(Yii::getAlias('@app') . '/_360Utils/shipment-carriers/fedex/fedex-common.php');
@@ -249,29 +257,29 @@ class FedexServices{
         $request['RequestedShipment'] = array(
             'ShipTimestamp' => date('c'),
             'DropoffType' => $pickUp, // valid values REGULAR_PICKUP, REQUEST_COURIER, DROP_BOX, BUSINESS_SERVICE_CENTER and STATION
-            'ServiceType' => $model->txt_tipo_servicio, // valid values STANDARD_OVERNIGHT, PRIORITY_OVERNIGHT, FEDEX_GROUND, ...
+            'ServiceType' => $model->tipo_servicio, // valid values STANDARD_OVERNIGHT, PRIORITY_OVERNIGHT, FEDEX_GROUND, ...
             'PackagingType' => $servicePacking, // valid values FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
             
             
             'Recipient' => $this->addRecipient(
-                $model->txt_destino_cp,
-                $model->txt_destino_pais,
-                $model->txt_destino_ciudad,
-                $model->txt_destino_estado,
-                $model->txt_destino_nombre_persona,
-                $model->txt_destino_telefono,
-                $model->txt_destino_direccion,
-                $model->txt_destino_compania
+                $model->destino_cp,
+                $model->destino_pais,
+                $model->destino_ciudad,
+                $model->destino_estado,
+                $model->destino_nombre_persona,
+                $model->destino_telefono,
+                $model->destino_direccion,
+                $model->destino_compania
             ),
             'Shipper' => $this->addRecipient(
-                $model->txt_origen_cp,
-                $model->txt_origen_pais,
-                $model->txt_origen_ciudad,
-                $model->txt_origen_estado,
-                $model->txt_origen_nombre_persona,
-                $model->txt_origen_telefono,
-                $model->txt_origen_direccion,
-                $model->txt_origen_compania
+                $model->origen_cp,
+                $model->origen_pais,
+                $model->origen_ciudad,
+                $model->origen_estado,
+                $model->origen_nombre_persona,
+                $model->origen_telefono,
+                $model->origen_direccion,
+                $model->origen_compania
             ),
        
 
@@ -305,8 +313,6 @@ class FedexServices{
         
             if ($response->HighestSeverity != 'FAILURE' && $response->HighestSeverity != 'ERROR'){
                 
-
-
                 $data = [];
                 $data['notifications'] = $response->Notifications;
                 $data['job_id']= $response->JobId;
@@ -314,7 +320,29 @@ class FedexServices{
                 $data['label_pdf'] = base64_encode($response->CompletedShipmentDetail->CompletedPackageDetails->Label->Parts->Image);
 
                 //return $data;
-                return $response;         
+                //return $response;      
+                
+                
+                $data = [];
+                $data['notifications'] = $response->Notifications;
+                $data['job_id']= $response->JobId;
+                $data['master_tracking_id'] = $response->CompletedShipmentDetail->MasterTrackingId;
+                $data['label_pdf'] = base64_encode($response->CompletedShipmentDetail->CompletedPackageDetails->Label->Parts->Image);
+
+
+                $res = new ResultadoEnvio();
+
+                $res->data          = json_encode($response);
+                $res->jobId         = $data['job_id'];
+                $res->envioCode     = $data['master_tracking_id']->TrackingNumber;
+                $res->envioCode2    = $data['master_tracking_id']->FormId;
+                $res->tipoEmpaque   = $servicePacking;
+                $res->tipoServicio  = $model->tipo_servicio;
+                $res->etiqueta      = $data['label_pdf'];
+
+                return $res;
+
+
             }else{
                 printError($client, $response);
             }
@@ -323,6 +351,48 @@ class FedexServices{
         } catch (SoapFault $exception) {
             printFault($exception, $client);
         }
+    }
+
+
+
+    //---------------- COMPRA DE SERVICIO --------------------------------
+
+    private function comprarFedexDocumento(CompraEnvio $model){
+        $fedex = new FedexServices();
+        $response = $fedex->comprarEnvioDocumento($model);
+
+        $model->data = json_encode($response);
+        $data = [];
+        $data['notifications'] = $response->Notifications;
+        $data['job_id']= $response->JobId;
+        $data['master_tracking_id'] = $response->CompletedShipmentDetail->MasterTrackingId;
+        $data['label_pdf'] = base64_encode($response->CompletedShipmentDetail->CompletedPackageDetails->Label->Parts->Image);
+
+        $model->envio_code = $data['master_tracking_id']->TrackingNumber;
+        $model->envio_code_2 = $data['master_tracking_id']->FormId;
+        $model->envio_label = $data['label_pdf'];
+
+        return $model;
+    }
+
+
+
+    private function comprarFedexPaquete(CompraEnvio $model){
+        $fedex = new FedexServices();
+        $response = $fedex->comprarEnvioPaquete($model);
+
+        $model->data = json_encode($response);
+        $data = [];
+        $data['notifications'] = $response->Notifications;
+        $data['job_id']= $response->JobId;
+        $data['master_tracking_id'] = $response->CompletedShipmentDetail->MasterTrackingId;
+        $data['label_pdf'] = base64_encode($response->CompletedShipmentDetail->CompletedPackageDetails->Label->Parts->Image);
+
+        $model->envio_code = $data['master_tracking_id']->TrackingNumber;
+        $model->envio_code_2 = $data['master_tracking_id']->FormId;
+        $model->envio_label = $data['label_pdf'];
+
+        return $model;
     }
 
 
@@ -385,14 +455,14 @@ class FedexServices{
     private function addRecipient($cp, $countryCode,$city=null, $stateProvinceCode=null,$personName=null,$phoneNumber=null, $addressLine = null,$companyName=null){
         $recipient = array(
             'Contact' => array(
-                'PersonName' => 'Recipient Name',
-                'CompanyName' => 'Company Name',
-                'PhoneNumber' => '9012637906'
+                'PersonName' => ($personName)?'Recipient Name':$personName,
+                'CompanyName' => ($companyName)?'Company Name':$companyName,
+                'PhoneNumber' => ($phoneNumber)?'9012637906':$phoneNumber,
             ),
             'Address' => array(
-                'StreetLines' => array('Address Line 1'),
-                'City' => 'Mexico',
-                'StateOrProvinceCode' => 'DF',
+                'StreetLines' => array(($addressLine)?'Address Line 1':$addressLine),
+                'City' => ($city)?'Mexico':$city,
+                'StateOrProvinceCode' => ($stateProvinceCode)?'DF':$stateProvinceCode,
                 'PostalCode' => $cp,
                 'CountryCode' => $countryCode,
                 'Residential' => false

@@ -5,8 +5,8 @@ namespace app\_360Utils\Services;
 
 use Yii;
 use app\models\WrkDatosCompras;
-use app\_360Utils\Cotizacion;
-use app\_360Utils\CPInfo;
+use app\_360Utils\Entity\Cotizacion;
+use app\_360Utils\Entity\CPInfo;
 
 class GeoNamesServices{
 

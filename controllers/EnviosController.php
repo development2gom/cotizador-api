@@ -19,6 +19,10 @@ use app\_360Utils\CotizadorPaquete;
 use app\_360Utils\CotizadorSobre;
 use app\models\Utils;
 use app\models\WrkEmpaque;
+use app\_360Utils\Entity\CompraEnvio;
+use app\_360Utils\Entity\Paquete;
+use app\_360Utils\Services\FedexServices;
+use app\_360Utils\Services\GeoNamesServices;
 
 
 class EnviosController extends Controller{
@@ -218,6 +222,9 @@ class EnviosController extends Controller{
 
         $cpFrom = $request->getBodyParam("cp_from");
         $cpTo = $request->getBodyParam("cp_to");
+        $stateCodeFrom = $request->getBodyParam("state_code_from");
+        $stateCodeTo= $request->getBodyParam("state_code_to");
+
         $countryCodeFrom = $request->getBodyParam("country_code_from");
         $countryCodeTo = $request->getBodyParam("country_code_to");
         $tipoPaquete = $request->getBodyParam("tipo_paquete");
@@ -285,10 +292,10 @@ class EnviosController extends Controller{
                 // "peso_kilogramos"=>"0.5"
                 "cp_origen"=>$cpFrom,
                 "pais_origen"=>$countryCodeFrom,
-                "estado_origen"=>"EM",
+                "estado_origen"=>$stateCodeTo,
                 "cp_destino"=>$cpTo,
                 "pais_destino"=>$countryCodeTo,
-                "estado_destino"=>"EM",
+                "estado_destino"=>$stateCodeTo,
                 "peso_kilogramos"=>"0.5",
                 "largo_cm"=>2,
                 "ancho_cm"=>1,
@@ -301,10 +308,10 @@ class EnviosController extends Controller{
             $json = (object)[
                 "cp_origen"=>$cpFrom,
                 "pais_origen"=>$countryCodeFrom,
-                "estado_origen"=>"EM",
+                "estado_origen"=>$stateCodeTo,
                 "cp_destino"=>$cpTo,
                 "pais_destino"=>$countryCodeTo,
-                "estado_destino"=>"EM",
+                "estado_destino"=>$stateCodeTo,
                 "peso_kilogramos"=>"0.5",
                 "largo_cm"=>2,
                 "ancho_cm"=>1,
@@ -335,6 +342,88 @@ class EnviosController extends Controller{
         
         // return $fedex->getFedex($cpFrom, $cpTo, $countryCodeFrom, $countryCodeTo, $paquetes,$tipoPaquete);
 
+    }
+
+    public function actionGenerarLabel2(){
+        $request = Yii::$app->request;
+        $uddiEnvio = $request->getBodyParam("uddi_envio");
+        
+        $envio = WrkEnvios::getEnvio($uddiEnvio);
+
+        if($envio->txt_tracking_number){
+            throw new HttpException(500, "Ya existe una guia");
+        }
+
+        $origen = $envio->origen;
+        $destino = $envio->destino;
+        if($envio->id_tipo_empaque==2){
+            $paquetes = $envio->empaque;
+        }else{
+            $paquetes = [];
+            foreach($envio->sobres as $key=>$sobre){
+                $pa = new WrkEmpaque();
+                $pa->num_peso = $sobre->num_peso;
+                $pa->num_alto = 0;
+                $pa->num_ancho = 0;
+                $pa->num_largo = 0;
+                $paquetes[]= $pa;
+            }   
+            
+        }
+
+
+        $compra = new CompraEnvio();
+        $compra->servicio = $envio->proveedor->uddi;
+        $compra->tipo_servicio = $envio->txt_tipo;
+        
+        $compra->origen_cp = $origen->num_codigo_postal;
+        $compra->origen_pais = $origen->txt_pais;
+        $compra->origen_ciudad = $origen->txt_estado;
+        $compra->origen_estado = $origen->txt_estado;
+        $compra->origen_direccion = $origen->direccionCompleta;
+        $compra->origen_nombre_persona = $origen->txt_nombre;
+        $compra->origen_telefono = $origen->num_telefono;
+        $compra->origen_compania = $origen->txt_empresa;
+
+        $compra->destino_cp = $destino->num_codigo_postal;
+        $compra->destino_pais = $destino->txt_pais;
+        $compra->destino_ciudad = $destino->txt_estado;
+        $compra->destino_estado = $destino->txt_estado;
+        $compra->destino_direccion = $destino->direccionCompleta;
+        $compra->destino_nombre_persona = $destino->txt_nombre;
+        $compra->destino_telefono = $destino->num_telefono;
+        $compra->destino_compania = $destino->txt_empresa;
+        
+        foreach($paquetes as $paquete){
+            $p = new Paquete();
+            $p->peso = $paquete->num_peso; 
+            $compra->addPaquete($p);
+        }
+        
+
+
+         //if($json->carrier == "FEDEX"){
+        $fedex = new FedexServices();
+        if($envio->id_tipo_empaque==2){
+             $res = $fedex->comprarEnvioDocumento($compra);
+             return $res;
+        }else{
+            $res = $fedex->comprarEnvioPaquete($compra);
+            return $res;
+        }
+         //}
+    }
+
+    public function actionGetCode(){
+
+        $request = Yii::$app->request;
+        $params = $request->bodyParams;
+
+        $cp = $request->getBodyParam("cp");
+        $country = $request->getBodyParam("country");
+
+        $geoNames = new GeoNamesServices();
+        return $geoNames->getCPData($cp, $country);
     }
 
     public function actionGenerarLabel(){

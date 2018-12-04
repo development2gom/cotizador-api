@@ -1,6 +1,6 @@
 <?php 
 
-namespace app\_360Utils;
+namespace app\_360Utils\Entity;
 
 class Persona{
     var $postal_code;

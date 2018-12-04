@@ -4,8 +4,9 @@
 namespace app\_360Utils\Services;
 
 use Yii;
-use app\models\WrkDatosCompras;
-use app\_360Utils\Cotizacion;
+
+use app\_360Utils\Entity\Cotizacion;
+use app\_360Utils\Entity\CompraEnvio;
 
 class UpsServices{
 
@@ -224,10 +225,17 @@ class UpsServices{
             $cotizacion->data                   = $responseData;
             $cotizacion->servicePacking         = "PT_UPSLETTER";
 
+
+            
+
+
             //Tiempo de entrega UPS
             if(isset($responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"])){
                 if(isset($responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["BusinessDaysInTransit"])){
                     $cotizacion->businessDaysInTransit  = $responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["BusinessDaysInTransit"];
+
+                    $cotizacion->deliveryDateStr = $cotizacion->businessDaysInTransit + " días";
+                    
                 }
                 if(isset($responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["DeliveryByTime"]) && 
                     $responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["DeliveryByTime"] != null){

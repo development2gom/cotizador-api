@@ -43,7 +43,7 @@ class ClientesController extends Controller{
 
         $enviosSearch = new WrkEnviosSearch();
         $enviosSearch->id_cliente = $cliente->id_cliente;
-        //$enviosSearch->txt_tracking_number = $tracking;
+        $enviosSearch->txt_tracking_number = $tracking;
         $envios = $enviosSearch->search([]);
 
         return $envios;

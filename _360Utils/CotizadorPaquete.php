@@ -71,6 +71,7 @@ class CotizadorPaquete{
         $cotizaciones = [];
         $count = 0;
         foreach($data['options'] as $item){
+            
             $service = $item->Service;
 
             $cotizacion = $fedex->cotizarEnvioPaquete($service, $json->cp_origen, $json->pais_origen, $json->cp_destino, $json->pais_destino, $fecha, $paquetes);

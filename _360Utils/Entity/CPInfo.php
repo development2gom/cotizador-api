@@ -12,6 +12,7 @@ class CPInfo{
     var $state_code;
     var $postal_code;
     var $value;
+    var $state;
 
 }
 

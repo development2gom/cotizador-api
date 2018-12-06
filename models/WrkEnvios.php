@@ -255,7 +255,7 @@ class WrkEnvios extends \yii\db\ActiveRecord
 
     public function fields(){
         $fields = parent::fields();
-        unset($fields["id_envio"], $fields["id_origen"], $fields["id_destino"], $fields["id_proveedor"], $fields["id_pago"], $fields["id_cliente"], $fields["id_tipo_empaque"]);
+        unset($fields["id_origen"], $fields["id_destino"], $fields["id_proveedor"], $fields["id_pago"], $fields["id_cliente"], $fields["id_tipo_empaque"]);
         
         $fields[] = "origen";
         $fields[] = "destino";

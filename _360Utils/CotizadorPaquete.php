@@ -4,15 +4,17 @@ namespace app\_360Utils;
 
 use app\_360Utils\Services\UpsServices;
 use app\_360Utils\Services\FedexServices;
+use app\_360Utils\Services\EstafetaServices;
 
 
 class CotizadorPaquete{
     
 
     //Servicios habilitaos
-    const USE_FEDEX = true; // Habilita FEDEX
-    const USE_DGOM  = false; //HABILITA DGOM
-    const USE_UPS   = true; //Habilita UPS
+    const USE_FEDEX       = true; // Habilita FEDEX
+    const USE_DGOM        = false; //HABILITA DGOM
+    const USE_UPS         = true; //Habilita UPS
+    const USE_ESTAFETA    = true; // Habilita ESTAFETA
 
 
     /**
@@ -39,6 +41,12 @@ class CotizadorPaquete{
         // UTILIZA UPS ---------------------------------
         if(self::USE_UPS){
             $res = $this->cotizaPaqueteUps($json, $paquetes);
+            $data = array_merge($data, $res);
+        }
+
+        // UTILIZA ESTAFETA ---------------------------------
+        if(self::USE_ESTAFETA){
+            $res = $this->cotizaPaqueteEstafeta($json, $paquetes);
             $data = array_merge($data, $res);
         }
 
@@ -71,7 +79,6 @@ class CotizadorPaquete{
         $cotizaciones = [];
         $count = 0;
         foreach($data['options'] as $item){
-            
             $service = $item->Service;
 
             $cotizacion = $fedex->cotizarEnvioPaquete($service, $json->cp_origen, $json->pais_origen, $json->cp_destino, $json->pais_destino, $fecha, $paquetes);
@@ -85,6 +92,20 @@ class CotizadorPaquete{
             }
         }
 
+        return $cotizaciones;
+    }
+
+     // ----------------------------- COTIZACION ESTAFETA ----------------------------------------
+     private function cotizaPaqueteEstafeta($json, $paquetes){
+        //Estafeta solo tiene entregas de MX a MX, en caso contrario, no se pide la cotizacón
+        if($json->pais_origen != "MX" || $json->pais_destino != "MX"){
+            return null;
+        }
+
+
+        $estafeta = new EstafetaServices();
+        $fecha = "";
+        $cotizaciones = $estafeta->cotizarEnvioPaquete($json->cp_origen,  $json->cp_destino, $fecha, $paquetes);
         return $cotizaciones;
     }
 

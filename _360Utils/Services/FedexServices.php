@@ -203,6 +203,8 @@ class FedexServices{
                 if($deliveryDate != null &&   $deliveryDate != "N/A"){
                     $cotizacion->deliveryDateStr = $deliveryDate;
                 }
+
+                $cotizacion->serviceTypeStr  = str_replace('_', ' ',$serviceType); // FIRST_OVERNIGHT, PRIORITY_OVERNIGHT
                 
 
 
@@ -220,6 +222,12 @@ class FedexServices{
 
 
 
+    
+
+
+
+    //---------------- COMPRA DE SERVICIOS --------------------------------
+
     function comprarEnvioDocumento(CompraEnvio $model){
         return $this->comprarEnvio($model,'FEDEX_ENVELOPE');
     }
@@ -233,7 +241,7 @@ class FedexServices{
         $pickUp = 'REGULAR_PICKUP';
 
 
-
+        $numeroPaquetes = count($model->paquetes); 
         $peso = $model->paquetes[0]->peso;
         $largo = $model->paquetes[0]->largo;
         $ancho = $model->paquetes[0]->ancho;
@@ -289,7 +297,7 @@ class FedexServices{
             'CustomerSpecifiedDetail' => array(
                 'MaskedData'=> 'SHIPPER_ACCOUNT_NUMBER'
             ), 
-            'PackageCount' => 1,
+            'PackageCount' => $numeroPaquetes,
                 'RequestedPackageLineItems' => array(
 
                 '0' => $this->addPackageLineItem($peso, $largo,$ancho,$alto)
@@ -352,10 +360,6 @@ class FedexServices{
             printFault($exception, $client);
         }
     }
-
-
-
-    //---------------- COMPRA DE SERVICIO --------------------------------
 
     private function comprarFedexDocumento(CompraEnvio $model){
         $fedex = new FedexServices();

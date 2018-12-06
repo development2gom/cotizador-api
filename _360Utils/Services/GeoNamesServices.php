@@ -5,8 +5,9 @@ namespace app\_360Utils\Services;
 
 use Yii;
 use app\models\WrkDatosCompras;
-use app\_360Utils\Entity\Cotizacion;
+use app\_360Utils\Cotizacion;
 use app\_360Utils\Entity\CPInfo;
+
 
 class GeoNamesServices{
 
@@ -40,6 +41,7 @@ function getCPData($cp, $country){
             $cp->state_code = $item['ISO3166-2'];
             $cp->neighborhood = $item['placeName'];
             $cp->postal_code = $item['postalCode'];
+            $cp->state = $item['adminName1'];
             $cp->value = $item['postalCode'] . " - " . $item['placeName'] . " - " . $item['adminName2'];
             array_push($res, $cp);
         }

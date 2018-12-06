@@ -18,6 +18,7 @@ class Cotizacion{
     var $servicePacking;
     var $alerts = [];
     var $deliveryDateStr = "No disponible"; //Texto que indica la fecha estimada para la entrega
+    var $serviceTypeStr = ""; // Texto para desplegar el tipo de servicio
 
     function addAlert($code, $desc){
         $alert = new Alert();

@@ -71,4 +71,5 @@ class RelEnvioExtras extends \yii\db\ActiveRecord
     {
         return $this->hasOne(CatExtras::className(), ['id_extra' => 'id_extra']);
     }
+
 }

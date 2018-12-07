@@ -160,7 +160,9 @@ class EntClientesSearch extends EntClientes
         $query->andFilterWhere(['like', 'uddi', $this->uddi])
             ->orFilterWhere(['like', new Expression("CONCAT_WS(' ', txt_nombre, txt_apellido_paterno, txt_apellido_materno)"), $this->parametrosBusqueda])
             ->orFilterWhere(['like', 'num_telefono', $this->parametrosBusqueda])
-            ->orFilterWhere(['like', 'txt_correo', $this->parametrosBusqueda]);
+            ->orFilterWhere(['like', 'txt_correo', $this->parametrosBusqueda])
+            ->orFilterWhere(['like', 'txt_razon_social', $this->parametrosBusqueda])
+            ->orFilterWhere(['like', 'txt_rfc', $this->parametrosBusqueda]);
 
         return $dataProvider;
     }

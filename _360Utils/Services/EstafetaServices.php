@@ -20,7 +20,7 @@ class EstafetaServices{
     const SOBRE_LARGO   = 1;
 
     const TIEMPO_ENTREGA = [
-        'Dia Sig.' => 'Dia siguente habil, de 8 a 18 horas',
+        'DiaSigTer' => 'Dia siguente habil, de 8 a 18 horas',
         'Terrestre' => 'De 2 a 5 días habiles, de 8 a 18 horas',
         '2 Dias' => 'Segundo día habil, de 8 a 18 horas'
     ];

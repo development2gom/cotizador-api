@@ -23,9 +23,14 @@ use app\_360Utils\Entity\CompraEnvio;
 use app\_360Utils\Entity\Paquete;
 use app\_360Utils\Services\FedexServices;
 use app\_360Utils\Services\GeoNamesServices;
+use app\_360Utils\CompraPaquete;
+use app\models\WrkResultadosEnvios;
 
 
 class EnviosController extends Controller{
+
+    const TIPO_ENVIO_PAQUETE    = 2;
+    const TIPO_ENVIO_SOBRE      = 1;
 
     public $enableCsrfValidation = false;
     public $serializer = [
@@ -62,6 +67,7 @@ class EnviosController extends Controller{
         $envio = new WrkEnvios();
         $origen = new WrkOrigen();
         $destino = new WrkDestino();
+
 
         if($envio->load($params, '') && $origen->load($params, "origen") && $destino->load($params, "destino")){
             $envio->generarNuevoEnvio($cliente, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes, $sobre);
@@ -344,6 +350,11 @@ class EnviosController extends Controller{
 
     }
 
+
+    /**
+     * MEtodo para registrar un envio con el carrier
+     * y obtener sus etiquetas
+     */
     public function actionGenerarLabel2(){
         $request = Yii::$app->request;
         $uddiEnvio = $request->getBodyParam("uddi_envio");
@@ -354,27 +365,71 @@ class EnviosController extends Controller{
             throw new HttpException(500, "Ya existe una guia");
         }
 
-        $origen = $envio->origen;
+        $origen  = $envio->origen;
         $destino = $envio->destino;
-        if($envio->id_tipo_empaque==2){
-            $paquetes = $envio->empaque;
-        }else{
-            $paquetes = [];
-            foreach($envio->sobres as $key=>$sobre){
-                $pa = new WrkEmpaque();
-                $pa->num_peso = $sobre->num_peso;
-                $pa->num_alto = 0;
-                $pa->num_ancho = 0;
-                $pa->num_largo = 0;
-                $paquetes[]= $pa;
-            }   
+
+        //Crea el objeto de compra
+        $compra = $this->createCompraEnvio($envio,$origen,$destino);
+
+        $pkgs = $envio->empaque;
+        if($pkgs == null){
+            $pkgs = $envio->sobres;
+        }
+        //Asigna los paquetes a la compra
+        foreach($pkgs as $key=>$sobre){
+            $p = new Paquete();
+            $p->peso = $sobre->num_peso;
+            $p->alto = $sobre->num_alto;
+            $p->largo = $sobre->num_largo;
+            $p->ancho = $sobre->num_ancho;
+            $compra->addPaquete($p);
+        }   
             
+        
+        if($envio->id_tipo_empaque== self::TIPO_ENVIO_PAQUETE ){
+            $compraPaquete = new CompraPaquete();
+            $res = $compraPaquete->comprarPaquete($compra);
+
+            foreach($res as $item){
+                //almacena la respuesta en la base de datos
+                $wrkResultadoEnvio = new WrkResultadosEnvios();
+                $wrkResultadoEnvio->uddi = Utils::generateToken('res_env_');
+                $wrkResultadoEnvio->id_envio = $envio->id_envio;
+                $wrkResultadoEnvio->txt_traking_number = $item->jobId;
+                $wrkResultadoEnvio->txt_envio_code = $item->envioCode;
+                $wrkResultadoEnvio->txt_envio_code_2 = $item->envioCode2;
+                $wrkResultadoEnvio->txt_tipo_empaque = $item->tipoEmpaque;
+                $wrkResultadoEnvio->txt_tipo_servicio = $item->tipoServicio;
+                $wrkResultadoEnvio->txt_etiqueta_formato = $item->etiquetaFormat;
+                $wrkResultadoEnvio->txt_data = $item->data;
+
+                //Garda el resultado del envio
+                $wrkResultadoEnvio->save();
+
+                //Genera la etiqueta
+                $wrkResultadoEnvio->generarPDF($item->etiqueta);
+
+            }
+
+            $envio->txt_tracking_number = $res[0]->jobId;
+            $envio->save();
+
+            return $res;
+        }else{
+            //TODO implementar sobre
+            //$compraPaquete = new CompraPaquete();
         }
 
 
+        
+    }
+
+
+    private function createCompraEnvio(WrkEnvios $envio,$origen , $destino){
         $compra = new CompraEnvio();
         $compra->servicio = $envio->proveedor->uddi;
         $compra->tipo_servicio = $envio->txt_tipo;
+        $compra->carrier = $envio->proveedor->txt_nombre_proveedor;
         
         $compra->origen_cp = $origen->num_codigo_postal;
         $compra->origen_pais = $origen->txt_pais;
@@ -393,25 +448,8 @@ class EnviosController extends Controller{
         $compra->destino_nombre_persona = $destino->txt_nombre;
         $compra->destino_telefono = $destino->num_telefono;
         $compra->destino_compania = $destino->txt_empresa;
-        
-        foreach($paquetes as $paquete){
-            $p = new Paquete();
-            $p->peso = $paquete->num_peso; 
-            $compra->addPaquete($p);
-        }
-        
 
-
-         //if($json->carrier == "FEDEX"){
-        $fedex = new FedexServices();
-        if($envio->id_tipo_empaque==2){
-             $res = $fedex->comprarEnvioDocumento($compra);
-             return $res;
-        }else{
-            $res = $fedex->comprarEnvioPaquete($compra);
-            return $res;
-        }
-         //}
+        return $compra;
     }
 
     public function actionGetCode(){
@@ -471,12 +509,12 @@ class EnviosController extends Controller{
 
     }
 
-    public function actionDescargarEtiqueta($uddi){
+    public function actionDescargarEtiqueta($uddi, $uddilabel){
         
         
-        $envio = WrkEnvios::getEnvio($uddi);
+        //$envio = WrkEnvios::getEnvio($uddi);
         
-        $basePath = "trackings/".$uddi.'/tracking.pdf';
+        $basePath = "trackings/".$uddi.'/' . $uddilabel . '-tracking.pdf';
 
         if (file_exists($basePath)) {
                 header('Content-Description: File Transfer');

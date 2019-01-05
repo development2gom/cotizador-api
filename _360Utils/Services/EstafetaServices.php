@@ -20,10 +20,11 @@ class EstafetaServices{
     const SOBRE_LARGO   = 1;
 
     const TIEMPO_ENTREGA = [
-        'Dia Sig.' => 'Dia siguente habil, de 8 a 18 horas',
-        'DiaSigTer'=>'Dia siguente habil, de 8 a 18 horas',
-        'Terrestre' => 'De 2 a 5 días habiles, de 8 a 18 horas',
-        '2 Dias' => 'Segundo día habil, de 8 a 18 horas'
+        'Dia Sig.'  => 'Dia siguente habil, de 8 a 18 horas',
+        'Terrestre' => 'De 2 a 5 días habiles terrestre, de 8 a 18 horas',
+        '2 Dias'    => 'Segundo día habil, de 8 a 18 horas',
+        'DiaSigTer' => 'Dia siguente habil terrestre, de 8 a 18 horas',
+        'Dia Sig.'  => 'Día siguiente'
     ];
 
 
@@ -112,7 +113,7 @@ class EstafetaServices{
             $cotizacion->data = $response;
             $cotizacion->servicePacking = "";
             
-            if(self::TIEMPO_ENTREGA[$cotizacion->serviceType] != null){
+            if(array_key_exists($cotizacion->serviceType, self::TIEMPO_ENTREGA)){
                 $cotizacion->deliveryDateStr = self::TIEMPO_ENTREGA[$cotizacion->serviceType];
             }
             $cotizacion->serviceTypeStr = $item->DescripcionServicio;

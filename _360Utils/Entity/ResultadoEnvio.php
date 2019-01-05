@@ -12,6 +12,7 @@ class ResultadoEnvio{
     var $tipoEmpaque;
     var $tipoServicio;
     var $etiqueta;
+    var $etiquetaFormat = "PDF";
     var $data;
 
 }

@@ -31,6 +31,8 @@ use yii\helpers\Url;
  * @property EntOrdenesCompras $pago
  * @property CatProveedores $proveedor
  * @property CatTipoEmpaque $tipoEmpaque
+ * @property WrkResultadosEnvios[] $wrkResultadosEnvios 
+ * @property WrkSobres[] $wrkSobres 
  */
 class WrkEnvios extends \yii\db\ActiveRecord
 {
@@ -161,6 +163,14 @@ class WrkEnvios extends \yii\db\ActiveRecord
         return $this->hasOne(CatTipoEmpaque::className(), ['id_tipo_empaque' => 'id_tipo_empaque']);
     }
 
+    /**
+    * @return \yii\db\ActiveQuery
+    */
+   public function getWrkResultadosEnvios()
+   {
+       return $this->hasMany(WrkResultadosEnvios::className(), ['id_envio' => 'id_envio']);
+   }
+
     public static function getEnvio($uddi){
         $model = self::find()->where(["uddi"=>$uddi])->one();
         if(!$model){
@@ -238,7 +248,11 @@ class WrkEnvios extends \yii\db\ActiveRecord
     }
 
     public function getEtiquetaUrl(){
-        return Yii::$app->urlManager->createAbsoluteUrl([''])."envios/descargar-etiqueta?uddi=".$this->uddi;
+        $res = [];
+        foreach($this->wrkResultadosEnvios as $item){
+            $res[] = Yii::$app->urlManager->createAbsoluteUrl([''])."envios/descargar-etiqueta?uddi=".$this->uddi.'&uddilabel='. $item->uddi;
+        }
+        return $res;
     }
 
     public function generarPDF($response){
@@ -275,6 +289,9 @@ class WrkEnvios extends \yii\db\ActiveRecord
         $fields[] = "empaque";
         $fields[] = "sobres";
         $fields[] = "extras";
+        $fields[] = "costoTotalEnvio";
+        $fields[] = "costoExtrasEnvio";
+        $fields[] = "wrkResultadosEnvios";
         
         return $fields;
     }
@@ -289,6 +306,9 @@ class WrkEnvios extends \yii\db\ActiveRecord
     public function generarNuevoEnvio($cliente = null, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes = null, $sobre = null){
 
         $transaction = Yii::$app->getDb()->beginTransaction();
+
+        $this->num_costo_envio = str_replace( ',', '', $this->num_costo_envio );
+        $this->num_subtotal = str_replace( ',', '', $this->num_subtotal  );
         
         if($cliente){
             // Guardar datos del destino
@@ -389,5 +409,29 @@ class WrkEnvios extends \yii\db\ActiveRecord
 
             $transaction->commit();
         }
+    }
+
+
+    /**
+     * Funcion que recupera el monto total del envio incluyendo los extras
+     */
+    public function getCostoTotalEnvio(){
+        $monto = $this->num_costo_envio;
+
+        foreach ($this->extras as $item){
+            $monto += $item->num_precio * $item->num_unidades;
+        }
+
+        return $monto;
+    }
+
+    public function getCostoExtrasEnvio(){
+        $monto = 0;
+
+        foreach ($this->extras as $item){
+            $monto += $item->num_precio * $item->num_unidades;
+        }
+
+        return $monto;
     }
 }

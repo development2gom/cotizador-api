@@ -11,10 +11,12 @@ class CotizadorPaquete{
     
 
     //Servicios habilitaos
-    const USE_FEDEX       = true; // Habilita FEDEX
+    const USE_FEDEX       = TRUE; // Habilita FEDEX
+    const USE_UPS         = FALSE; //Habilita UPS
+    const USE_ESTAFETA    = FALSE; // Habilita ESTAFETA
+
+
     const USE_DGOM        = false; //HABILITA DGOM
-    const USE_UPS         = true; //Habilita UPS
-    const USE_ESTAFETA    = true; // Habilita ESTAFETA
 
 
     /**
@@ -59,8 +61,8 @@ class CotizadorPaquete{
 
     private function cotizaPaqueteFedex($json, $paquetes){
         $fedex = new FedexServices();
-        //FIXME: fecha actual
-        $fecha = "2018-10-06";
+        //fecha actual
+        $fecha = date('Y-m-d');//"2018-10-06";
         $disponiblidad = $fedex->disponibilidadPaquete($json->cp_origen, $json->pais_origen, $json->cp_destino, $json->pais_destino, $fecha);
 
         if(!$disponiblidad){
@@ -73,7 +75,7 @@ class CotizadorPaquete{
         $data['notifications']  = $disponiblidad->Notifications;
         $data['options']        = $disponiblidad->Options;
 
-        // FIXME 
+        // Fecha actual 
         $fecha = date('c');
 
         $cotizaciones = [];
@@ -86,6 +88,7 @@ class CotizadorPaquete{
                 array_push($cotizaciones, $cotizacion);
             }
 
+            //FIXME: Limita el resultado de FEDEX
             $count++;
             if($count >1){
                 break;

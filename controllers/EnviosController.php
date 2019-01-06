@@ -389,6 +389,7 @@ class EnviosController extends Controller{
             $compraPaquete = new CompraPaquete();
             $res = $compraPaquete->comprarPaquete($compra);
 
+            $resEnvios = [];
             foreach($res as $item){
                 //almacena la respuesta en la base de datos
                 $wrkResultadoEnvio = new WrkResultadosEnvios();
@@ -408,12 +409,13 @@ class EnviosController extends Controller{
                 //Genera la etiqueta
                 $wrkResultadoEnvio->generarPDF($item->etiqueta);
 
+                $resEnvios[] = $wrkResultadoEnvio;
             }
 
             $envio->txt_tracking_number = $res[0]->jobId;
             $envio->save();
 
-            return $res;
+            return ['comprarPaqueteRes'=>$res, 'resEnvios'=>$resEnvios];
         }else{
             //TODO implementar sobre
             //$compraPaquete = new CompraPaquete();

@@ -76,7 +76,6 @@ class EnviosController extends Controller{
             throw new HttpException(500, "No se enviaron todos los datos");
         }
     }
-
     public function actionActualizarEnvio(){
         $request = Yii::$app->request;
         $params = $request->bodyParams;
@@ -362,8 +361,7 @@ class EnviosController extends Controller{
         $envio = WrkEnvios::getEnvio($uddiEnvio);
 
         if($envio->txt_tracking_number){
-            //throw new HttpException(500, "Ya existe una guia");
-            return $envio;
+            throw new HttpException(500, "Ya existe una guia");
         }
 
         $origen  = $envio->origen;

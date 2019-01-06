@@ -362,7 +362,8 @@ class EnviosController extends Controller{
         $envio = WrkEnvios::getEnvio($uddiEnvio);
 
         if($envio->txt_tracking_number){
-            throw new HttpException(500, "Ya existe una guia");
+            //throw new HttpException(500, "Ya existe una guia");
+            return $envio;
         }
 
         $origen  = $envio->origen;

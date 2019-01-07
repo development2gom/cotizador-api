@@ -4,6 +4,7 @@ namespace app\models;
 
 use Yii;
 use app\modules\ModUsuarios\models\EntUsuarios;
+use app\_dgomFactura\Entity\FacturaRequest;
 
 class Pagos
 {
@@ -336,6 +337,16 @@ class Pagos
 		$card->delete();
 	}
 
+	public function generarFactura2(FacturaRequest $fr){
+		if(!$fr->isValid()){
+			//TODO
+		}
+
+		$parametros = $fr->getParams();
+		$respuesta = $this->callGenerarFactura2($parametros);
+		return $respuesta;
+	}
+
 	public function generarFactura($datosFacturar, $transaccion){
 
 		$parametros = [
@@ -371,10 +382,9 @@ class Pagos
 		
 	}
 
-	public function callGenerarFactura($parametros){
+	public function callGenerarFactura2($parametros){
                                                            
 		$data_string = json_encode($parametros); 
-		//$data_string = http_build_query($parametros);
 
         //open connection
         $ch = curl_init();
@@ -385,8 +395,7 @@ class Pagos
         curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);                                                                  
          curl_setopt($ch, CURLOPT_HTTPHEADER,[                                                                          
-             'Content-Type: application/json',                                                                                
-        //     //'Content-Length: ' . strlen($data_string))                                                                       
+             'Content-Type: application/json',                                                                     
          ]); 
 
         //execute post

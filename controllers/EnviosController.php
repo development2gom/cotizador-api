@@ -412,10 +412,11 @@ class EnviosController extends Controller{
                 $resEnvios[] = $wrkResultadoEnvio;
             }
 
+            //Actualiza el traking number de la guia
             $envio->txt_tracking_number = $res[0]->jobId;
             $envio->save();
 
-            return ['comprarPaqueteRes'=>$res, 'resEnvios'=>$resEnvios];
+            return ['envio'=>$envio,'comprarPaqueteRes'=>$res, 'resEnvios'=>$resEnvios];
         }else{
             //TODO implementar sobre
             //$compraPaquete = new CompraPaquete();

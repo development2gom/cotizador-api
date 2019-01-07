@@ -64,6 +64,14 @@ class WrkResultadosEnvios extends \yii\db\ActiveRecord
             'txt_data' => 'Txt Data',
         ];
     }
+    
+    public function fields(){
+        $fields = parent::fields(); 
+        $fields[] = "etiquetaUrl";
+
+        return $fields;
+    }
+
 
     /**
      * @return \yii\db\ActiveQuery
@@ -94,10 +102,7 @@ class WrkResultadosEnvios extends \yii\db\ActiveRecord
 
 
     public function getEtiquetaUrl(){
-        $res = [];
-        foreach($this->wrkResultadosEnvios as $item){
-            $res[] = Yii::$app->urlManager->createAbsoluteUrl([''])."envios/descargar-etiqueta?uddi=" . $this->envio->uddi  . '&uddilabel='. $this->uddi;
-        }
+            $res = Yii::$app->urlManager->createAbsoluteUrl([''])."envios/descargar-etiqueta?uddi=" . $this->envio->uddi  . '&uddilabel='. $this->uddi;
         return $res;
     }
 }

@@ -292,6 +292,9 @@ class WrkEnvios extends \yii\db\ActiveRecord
         $fields[] = "costoTotalEnvio";
         $fields[] = "costoExtrasEnvio";
         $fields[] = "wrkResultadosEnvios";
+        $fields[] = "puedeFacturar";
+        $fields[] = "facturaXmlUrl";
+        $fields[] = "facturaPdfUrl";
         
         return $fields;
     }
@@ -433,5 +436,24 @@ class WrkEnvios extends \yii\db\ActiveRecord
         }
 
         return $monto;
+    }
+
+    public function getFacturaPdfUrl(){
+        return Yii::$app->urlManager->createAbsoluteUrl([''])."/facturas/" . $this->cliente->uddi . "/" . $this->uddi . "/factura.pdf";
+    }
+
+    public function getFacturaXmlUrl(){
+        return Yii::$app->urlManager->createAbsoluteUrl([''])."/facturas/" . $this->cliente->uddi . "/" . $this->uddi . "/factura.xml";
+    }
+
+    public function getPuedeFacturar(){
+
+        $maxDaysFacturar = 10; //Días maximos para poder facturar
+
+        $interval = date_diff(new \DateTime(Calendario::getFechaActual()), new \DateTime($this->fch_creacion));
+        if(abs($interval->format('%a')) > $maxDaysFacturar ){
+            return false;
+        }
+        return true;
     }
 }

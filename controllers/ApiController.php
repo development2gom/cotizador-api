@@ -27,8 +27,10 @@ use app\models\ResponseServices;
 use app\models\OpenPay;
 use app\models\EntOrdenesCompras;
 use app\models\Pagos;
+use app\models\RelEnvioExtras;
 use app\config\ServicesApiConfig;
 use yii\web\HttpException;
+use app\_dgomFactura\Entity\FacturaRequest;
 
 /**
  * ConCategoiriesController implements the CRUD actions for ConCategoiries model.
@@ -769,6 +771,76 @@ class ApiController extends Controller
         return $response;
     }
 
+
+    public function actionGenerarFactura2(){
+        $request = Yii::$app->request;
+        $uddiEnvio = $request->getBodyParam('uddi_envio');
+
+        $envio = WrkEnvios::getEnvio($uddiEnvio);
+
+        if($envio->b_facturado == 1){
+            return true;
+        }
+
+        //Si no tiene folio de pago ni txt_folio, es que no se ha pagado
+        //por lo cual no se puede facturar
+        if(!$envio->pago && !$envio->txt_folio){
+            throw new HttpException(500,'El envío no tiene asociado un pago');
+        }
+
+        // Monto del envio ---------------
+        $montoTotal = $envio->num_costo_envio;
+        //Busca los extras
+        $extras = RelEnvioExtras::find()->where(['id_envio'=>$envio->id_envio])->sum('num_precio');
+        $montoTotal += $extras;
+        
+        //Pone los datos de la factura
+        $facturaRequest = new FacturaRequest();
+
+        $facturaRequest->useSandBox        = true;
+        $facturaRequest->transaccion       = $envio->uddi;
+        $facturaRequest->formaPago         = "04";
+        $facturaRequest->condicionesPago   = 'Contado';
+        $facturaRequest->subTotal          = $montoTotal;
+        $facturaRequest->total             = $montoTotal;
+        $facturaRequest->rfcReceptor       = $envio->cliente->txt_rfc;
+        $facturaRequest->nombreReceptor    = $envio->cliente->nombreCompleto;
+        $facturaRequest->claveProdServicio = '84101600';
+        $facturaRequest->cantidad          = '1';
+        $facturaRequest->claveUnidad       = 'C62'; 
+        $facturaRequest->unidad            = 'Uno';
+        $facturaRequest->descripcion       = 'Envio de paqueteria';
+        $facturaRequest->valorUnitario     = $montoTotal;
+        $facturaRequest->importe           = $montoTotal;
+        $facturaRequest->usoCFDIReceptor   = 'G03';
+
+        $factura = new Pagos();
+        $facturaGenerar = $factura->generarFactura2($facturaRequest);
+        
+        if(isset($facturaGenerar->pdf) && isset($facturaGenerar->xml)){
+            
+            $this->validarDirectorio("facturas/".$envio->cliente->uddi);
+            $this->validarDirectorio("facturas/".$envio->cliente->uddi."/".$envio->uddi);
+
+            $pdf = base64_decode($facturaGenerar->pdf);
+
+            $xml = base64_decode($facturaGenerar->xml);
+
+            file_put_contents("facturas/".$envio->cliente->uddi."/".$envio->uddi."/factura.pdf", $pdf);
+            file_put_contents("facturas/".$envio->cliente->uddi."/".$envio->uddi."/factura.xml", $xml);
+
+            $envio->b_facturado = 1;
+            $envio->save();
+        }        
+
+        return true;
+
+        
+    }
+
+    /**
+     * Depreciada
+     *//*
     public function actionGenerarFactura(){
         $request = Yii::$app->request;//print_r($request->getBodyParam('transacciones'));exit;
 
@@ -784,7 +856,7 @@ class ApiController extends Controller
 
         // Datos de facturación
         if(empty($request->getBodyParam('uddi_cliente'))){
-            $error->message = 'Body de la petición faltante5';
+            $error->message = 'Body de la petición faltante';
 
             return $error;
         }
@@ -842,7 +914,7 @@ class ApiController extends Controller
         }
 
         return $botonesArray;
-    }
+    }*/
     
     public function validarDirectorio($path){
 		if(!file_exists($path)){

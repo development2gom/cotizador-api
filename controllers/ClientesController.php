@@ -38,13 +38,10 @@ class ClientesController extends Controller{
         $request = Yii::$app->request;
         $params = $request->bodyParams;
         $uddi = $request->getBodyParam("uddi_cliente");
-        $tracking = $request->getBodyParam("txt_tracking_number");
+        
         $cliente = EntClientes::getClienteByUddi($uddi);
 
-        $enviosSearch = new WrkEnviosSearch();
-        $enviosSearch->id_cliente = $cliente->id_cliente;
-        $enviosSearch->txt_tracking_number = $tracking;
-        $envios = $enviosSearch->search([]);
+        $envios = WrkEnvios::find()->where(['id_cliente'=>$cliente->id_cliente])->orderBy('fch_creacion DESC')->all();
 
         return $envios;
     }

@@ -439,10 +439,16 @@ class WrkEnvios extends \yii\db\ActiveRecord
     }
 
     public function getFacturaPdfUrl(){
+        if($this->cliente == null){
+            return "";
+        }
         return Yii::$app->urlManager->createAbsoluteUrl([''])."/facturas/" . $this->cliente->uddi . "/" . $this->uddi . "/factura.pdf";
     }
 
     public function getFacturaXmlUrl(){
+        if($this->cliente == null){
+            return "";
+        }
         return Yii::$app->urlManager->createAbsoluteUrl([''])."/facturas/" . $this->cliente->uddi . "/" . $this->uddi . "/factura.xml";
     }
 

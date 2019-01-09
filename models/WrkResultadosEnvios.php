@@ -86,14 +86,16 @@ class WrkResultadosEnvios extends \yii\db\ActiveRecord
 
     public function generarPDF($etiquetaB64){
 
-        //$file = base64_encode($etiquetaB64);
-
         $decoded = base64_decode($etiquetaB64);//echo $decoded;exit;
         $basePath = "trackings/" . $this->envio->uddi . '/' ;
 
         Files::validarDirectorio($basePath);
 
-        $file2 = $basePath . $this->uddi . '-tracking.pdf';
+        if($this->txt_etiqueta_formato == "GIF"){
+            $file2 = $basePath . $this->uddi . '-tracking.gif';
+        }else{
+            $file2 = $basePath . $this->uddi . '-tracking.pdf';
+        }
         $fp = fopen($file2, "w+");
         file_put_contents($file2, $decoded);
 
@@ -102,6 +104,7 @@ class WrkResultadosEnvios extends \yii\db\ActiveRecord
 
 
     public function getEtiquetaUrl(){
+
             $res = Yii::$app->urlManager->createAbsoluteUrl([''])."envios/descargar-etiqueta?uddi=" . $this->envio->uddi  . '&uddilabel='. $this->uddi;
         return $res;
     }

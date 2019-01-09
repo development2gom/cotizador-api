@@ -9,22 +9,22 @@ use app\_360Utils\Entity\CompraEnvio;
 use yii\web\HttpException;
 
 
-class CompraPaquete{
+class CompraSobre{
 
 
-    function comprarPaquete(CompraEnvio $compra){
+    function comprarSobre(CompraEnvio $compra){
         switch(strtoupper( $compra->carrier)){
             case "FEDEX":
                 $fedex = new FedexServices();
-                $res = $fedex->comprarEnvioPaquete($compra);
+                $res = $fedex->comprarEnvioDocumento($compra);
                 return $res;
             case "UPS":
                 $ups = new UpsServices();
-                $res = $ups->comprarEnvioPaquete($compra);
+                $res = $ups->comprarEnvioDocumento($compra);
                 return $res;
             case "ESTAFETA":
                 $estafeta = new EstafetaServices();
-                $res = $estafeta->comprarEnvioPaquete($compra);
+                $res = $estafeta->comprarEnvioDocumento($compra);
                 return $res;
             default:
                 throw new HttpException(500,"Carrier selecconado no implementado " . $compra->carrier );

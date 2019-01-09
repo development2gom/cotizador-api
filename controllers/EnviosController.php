@@ -25,6 +25,7 @@ use app\_360Utils\Services\FedexServices;
 use app\_360Utils\Services\GeoNamesServices;
 use app\_360Utils\CompraPaquete;
 use app\models\WrkResultadosEnvios;
+use app\_360Utils\CompraSobre;
 
 
 class EnviosController extends Controller{
@@ -271,40 +272,16 @@ class EnviosController extends Controller{
             }
         }
 
-        $respuesta = [];
-        for($i = 0; $i<3; $i++){
-            $eo = new EnviosObject();
-            $eo->cpOrigen = "54710";
-            $eo->cpDestino = "57349";
-            $eo->precioOriginal = 258+$i;
-            $eo->precioCliente = 258+($i+1);
-            $eo->mensajeria = "FEDEX";
-            $eo->fechaEntrega = "2018-11-26";    
-            $eo->tipoEnvio = "Express";
-            $eo->urlImagen = Yii::$app->urlManager->createAbsoluteUrl([''])."images/fedex.jpg";
-
-            $respuesta[] = $eo;
-        }
+       
 
         if(strtoupper($tipoPaquete)=="SOBRE"){
             $json = (object)[
-                // "cp_origen"=>$cpFrom,
-                // "pais_origen"=>$countryCodeFrom,
-                // "estado_origen"=>"EM",
-                // "cp_destino"=>$cpTo,
-                // "pais_destino"=>$countryCodeTo,
-                // "estado_destino"=>"EM",
-                // "peso_kilogramos"=>"0.5"
                 "cp_origen"=>$cpFrom,
                 "pais_origen"=>$countryCodeFrom,
                 "estado_origen"=>$stateCodeTo,
                 "cp_destino"=>$cpTo,
                 "pais_destino"=>$countryCodeTo,
                 "estado_destino"=>$stateCodeTo,
-                "peso_kilogramos"=>"0.5",
-                "largo_cm"=>2,
-                "ancho_cm"=>1,
-                "alto_cm"=>1,
             ];
             $cotizador = new CotizadorSobre();
             return $cotizador->realizaCotizacion($json,  $paquetes); // Agregar arreglo con paquetes
@@ -317,36 +294,10 @@ class EnviosController extends Controller{
                 "cp_destino"=>$cpTo,
                 "pais_destino"=>$countryCodeTo,
                 "estado_destino"=>$stateCodeTo,
-                "peso_kilogramos"=>"0.5",
-                "largo_cm"=>2,
-                "ancho_cm"=>1,
-                "alto_cm"=>1,
-                // "cp_origen"=>"90210",
-                // "pais_origen"=>"US",
-                // "estado_origen"=>"CA",
-                // "cp_destino"=>"84537",
-                // "pais_destino"=>"US",
-                // "estado_destino"=>"UT",
-                // "peso_kilogramos"=>"0.5",
-                // "alto_cm"=>"5",
-                // "ancho_cm"=>"4",
-                // "largo_cm"=>"5"
-                
-
             ];
             $cotizador = new CotizadorPaquete();
-            //$json->cp_origen, $json->estado_origen, $json->pais_origen, $json->cp_destino, $json->estado_destino , $json->pais_destino, $fecha, $json->peso_kilogramos, $json->largo_cm, $json->ancho_cm, $json->alto_cm
-            return $cotizador->realizaCotizacion($json, $paquetes);
+             return $cotizador->realizaCotizacion($json, $paquetes);
         }
-
-        
-
-        
-
-        // $fedex = new Fedex($tipoPaquete);
-        
-        // return $fedex->getFedex($cpFrom, $cpTo, $countryCodeFrom, $countryCodeTo, $paquetes,$tipoPaquete);
-
     }
 
 
@@ -367,8 +318,11 @@ class EnviosController extends Controller{
         $origen  = $envio->origen;
         $destino = $envio->destino;
 
+        
         //Crea el objeto de compra
         $compra = $this->createCompraEnvio($envio,$origen,$destino);
+        
+        
 
         $pkgs = $envio->empaque;
         if($pkgs == null){
@@ -378,52 +332,52 @@ class EnviosController extends Controller{
         foreach($pkgs as $key=>$sobre){
             $p = new Paquete();
             $p->peso = $sobre->num_peso;
-            $p->alto = $sobre->num_alto;
-            $p->largo = $sobre->num_largo;
-            $p->ancho = $sobre->num_ancho;
+            if($envio->id_tipo_empaque == self::TIPO_ENVIO_PAQUETE){
+                $p->alto = $sobre->num_alto;
+                $p->largo = $sobre->num_largo;
+                $p->ancho = $sobre->num_ancho;
+            }
             $compra->addPaquete($p);
         }   
             
         
-        if($envio->id_tipo_empaque== self::TIPO_ENVIO_PAQUETE ){
+        if($envio->id_tipo_empaque == self::TIPO_ENVIO_PAQUETE ){
             $compraPaquete = new CompraPaquete();
             $res = $compraPaquete->comprarPaquete($compra);
-
-            $resEnvios = [];
-            foreach($res as $item){
-                //almacena la respuesta en la base de datos
-                $wrkResultadoEnvio = new WrkResultadosEnvios();
-                $wrkResultadoEnvio->uddi = Utils::generateToken('res_env_');
-                $wrkResultadoEnvio->id_envio = $envio->id_envio;
-                $wrkResultadoEnvio->txt_traking_number = $item->jobId;
-                $wrkResultadoEnvio->txt_envio_code = $item->envioCode;
-                $wrkResultadoEnvio->txt_envio_code_2 = $item->envioCode2;
-                $wrkResultadoEnvio->txt_tipo_empaque = $item->tipoEmpaque;
-                $wrkResultadoEnvio->txt_tipo_servicio = $item->tipoServicio;
-                $wrkResultadoEnvio->txt_etiqueta_formato = $item->etiquetaFormat;
-                $wrkResultadoEnvio->txt_data = $item->data;
-
-                //Garda el resultado del envio
-                $wrkResultadoEnvio->save();
-
-                //Genera la etiqueta
-                $wrkResultadoEnvio->generarPDF($item->etiqueta);
-
-                $resEnvios[] = $wrkResultadoEnvio;
-            }
-
-            //Actualiza el traking number de la guia
-            $envio->txt_tracking_number = $res[0]->jobId;
-            $envio->save();
-
-            return ['envio'=>$envio,'comprarPaqueteRes'=>$res, 'resEnvios'=>$resEnvios];
         }else{
-            //TODO implementar sobre
-            //$compraPaquete = new CompraPaquete();
+            // implementar sobre
+            $compraSobre = new CompraSobre();
+            $res = $compraSobre->comprarSobre($compra);
         }
 
+        $resEnvios = [];
+        foreach($res as $item){
+            //almacena la respuesta en la base de datos
+            $wrkResultadoEnvio = new WrkResultadosEnvios();
+            $wrkResultadoEnvio->uddi = Utils::generateToken('res_env_');
+            $wrkResultadoEnvio->id_envio = $envio->id_envio;
+            $wrkResultadoEnvio->txt_traking_number = $item->jobId;
+            $wrkResultadoEnvio->txt_envio_code = $item->envioCode;
+            $wrkResultadoEnvio->txt_envio_code_2 = $item->envioCode2;
+            $wrkResultadoEnvio->txt_tipo_empaque = $item->tipoEmpaque;
+            $wrkResultadoEnvio->txt_tipo_servicio = $item->tipoServicio;
+            $wrkResultadoEnvio->txt_etiqueta_formato = $item->etiquetaFormat;
+            $wrkResultadoEnvio->txt_data = $item->data;
 
-        
+            //Garda el resultado del envio
+            $wrkResultadoEnvio->save();
+
+            //Genera la etiqueta
+            $wrkResultadoEnvio->generarPDF($item->etiqueta);
+
+            $resEnvios[] = $wrkResultadoEnvio;
+        }
+
+        //Actualiza el traking number de la guia
+        $envio->txt_tracking_number = $res[0]->jobId;
+        $envio->save();
+
+        return ['envio'=>$envio,'comprarPaqueteRes'=>$res, 'resEnvios'=>$resEnvios];        
     }
 
 
@@ -517,6 +471,7 @@ class EnviosController extends Controller{
         //$envio = WrkEnvios::getEnvio($uddi);
         
         $basePath = "trackings/".$uddi.'/' . $uddilabel . '-tracking.pdf';
+        $basePathGif = "trackings/".$uddi.'/' . $uddilabel . '-tracking.gif';
 
         if (file_exists($basePath)) {
                 header('Content-Description: File Transfer');
@@ -528,7 +483,18 @@ class EnviosController extends Controller{
                 //header('Content-Length: ' . filesize($file2));
                 readfile($basePath);
                 exit;
-        }else{
+        }else if(file_exists($basePathGif)){
+            header('Content-Description: File Transfer');
+                //header('Content-Type: application/gif');
+                header('Content-Disposition: attachment; filename="' . basename($basePathGif) . '"');
+                header('Expires: 0');
+                header('Cache-Control: must-revalidate');
+                header('Pragma: public');
+                //header('Content-Length: ' . filesize($file2));
+                readfile($basePathGif);
+                exit;
+        }
+        else{
             throw new HttpException(404, "No existe el archivo para descargar");
         }
 

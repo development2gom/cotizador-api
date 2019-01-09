@@ -118,20 +118,8 @@ class UpsServices{
         $servicios = [self::S_AIR_1DAY,self::S_AIR_2DAY,self::S_GROUND, self::S_AIR_1DAYEARLYAM,self::S_3DAYSELECT];
         $responses = [];
 
-        //TODO contemplar varios paquetes
-        $paquete = $paquetes[0];
-
-        //Cambia el peso de kilos a libras
-        $peso = $paquete['num_peso'];// * 2.20462;
-
-        //Cambia el tamaño de cm a pulgadas
-        $largo = $paquete['num_largo'];// * 0.393701;
-        $ancho = $paquete['num_ancho'];// * 0.393701;
-        $alto  =  $paquete['num_alto'];// * 0.393701;
-
-
         foreach($servicios as $item){
-            $res = $this->cotizarEnvioPaqueteInterno($item,$cp_origen,$stado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $peso, $largo,$ancho,$alto);
+            $res = $this->cotizarEnvioPaqueteInterno($item,$cp_origen,$stado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $paquetes);
             if($res != null){
                 array_push($responses,$res);
             }
@@ -152,120 +140,52 @@ class UpsServices{
 
     private function comprarEnvioInterno(CompraEnvio $model, $servicePacking){
 
-        $paquete = $model->paquetes[0];
 
-        $json = [
-            "UPSSecurity" => [
-                "UsernameToken" => [
-                    "Username"=> self::UPS_USER_NAME,
-                    "Password"=> self::UPS_PASSWORD
-                ],
-                "ServiceAccessToken"=>[
-                    "AccessLicenseNumber" => self::UPS_LICENCE_NUMBER
-                ]
-            ],
+        $paquetes = $model->paquetes;
 
-            "ShipmentRequest" => [
-                "Request" => [
-                    "RequestOption" => "validate",
-                    "TransactionReference" => [
-                        "CustomerContext" => self::UPS_CUSTOMER_CONTEXT
-                    ]
-                ],
-                "Shipment" => [
-                    "Description" => "Description",
-                    "Shipper" => [
-                        "Name" => $model->origen_nombre_persona,
-                        "AttentionName" => $model->origen_nombre_persona,
-                        "TaxIdentificationNumber" => self::UPS_TAX_ID_NUMBER,
-                        "Phone" => [
-                            "Number" => $model->origen_telefono,
-                            "Extension" => ""
-                        ],
-                        "ShipperNumber" => self::UPS_SHIPER_NUMBER,
-                        "FaxNumber" => $model->origen_telefono,
-                        "Address" => [
-                            "AddressLine" => $model->origen_direccion,
-                            "City" => $model->origen_ciudad,
-                            "StateProvinceCode" => $model->origen_estado,
-                            "PostalCode" => $model->origen_cp,
-                            "CountryCode" => $model->origen_pais
-                        ]
-                    ],
-                    "ShipTo" => [
-                        "Name" => $model->destino_nombre_persona,
-                        "AttentionName" => $model->destino_nombre_persona,
-                        "Phone" => [
-                            "Number" => $model->destino_telefono,
-                        ],
-                        "Address" => [
-                            "AddressLine" => $model->destino_direccion,
-                            "City" => $model->destino_ciudad,
-                            "StateProvinceCode" => $model->destino_estado,
-                            "PostalCode" => $model->destino_cp,
-                            "CountryCode" => $model->destino_pais
-                        ]
-                    ],
-                    "ShipFrom" => [
-                        "Name" => $model->origen_nombre_persona,
-                        "AttentionName" => $model->origen_nombre_persona,
-                        "Phone" => [
-                            "Number" => $model->origen_telefono,
-                        ],
-                        "FaxNumber" => $model->origen_telefono,
-                        "Address" => [
-                            "AddressLine" => $model->origen_direccion,
-                            "City" => $model->origen_ciudad,
-                            "StateProvinceCode" => $model->origen_estado,
-                            "PostalCode" => $model->origen_cp,
-                            "CountryCode" => $model->origen_pais
-                        ]
-                    ],
-                    "PaymentInformation" => [
-                        "ShipmentCharge" => [
-                            "Type" => "01",
-                            "BillShipper" => [
-                                "AccountNumber" => self::UPS_SHIPER_NUMBER
-                            ]
-                        ]
-                    ],
-                    "Service" => [
-                        "Code" => "01",
-                        "Description" => "Express"
-                    ],
-                    "Package" => [
-                        "Description" => "Description",
-                        "Packaging" => [
-                            "Code" => "02",
-                            "Description" => "Description"
-                        ],
-                        "Dimensions" => [
-                            "UnitOfMeasurement" => [
-                                "Code" => "CM",
-                                "Description" => "Centimetros"
-                            ],
-                            "Length" => $paquete->largo . "",
-                            "Width" => $paquete->ancho . "",
-                            "Height" => $paquete->alto . ""
-                        ],
-                        "PackageWeight" => [
-                            "UnitOfMeasurement" => [
-                                "Code" => "KGS",
-                                "Description" => "Kilos"
-                            ],
-                            "Weight" => $paquete->peso
-                        ]
-                    ]
-                ],
-                "LabelSpecification" => [
-                    "LabelImageFormat" => [
-                        "Code" => "GIF",
-                        "Description" => "GIF"
-                    ],
-                    "HTTPUserAgent" => "Mozilla/4.5"
-                ]
-            ]
-        ];
+
+        $json["UPSSecurity"] = $this->getSecurity();
+        
+        $json["ShipmentRequest"] = [];
+        $json["ShipmentRequest"]["Request"] = [];
+        $json["ShipmentRequest"]["Request"]["RequestOption"] = "validate";
+        $json["ShipmentRequest"]["Request"]["TransactionReference"] = [];
+        $json["ShipmentRequest"]["Request"]["TransactionReference"]["CustomerContext"] = self::UPS_CUSTOMER_CONTEXT;
+              
+        $json["ShipmentRequest"]["Shipment"] = [];
+        $json["ShipmentRequest"]["Shipment"]["Description"] = "Envios 360";
+        
+        $json["ShipmentRequest"]["Shipment"]["Shipper"]     = $this->getShipper($model->origen_estado,$model->origen_cp,$model->origen_pais, $model->origen_nombre_persona,  $model->origen_direccion);
+        $json["ShipmentRequest"]["Shipment"]["ShipTo"]      = $this->getShipTo($model->destino_estado,$model->destino_cp,$model->destino_pais, $model->destino_nombre_persona, $model->destino_direccion);
+        $json["ShipmentRequest"]["Shipment"]["ShipFrom"]    = $this->getShipper($model->origen_estado,$model->origen_cp,$model->origen_pais, $model->origen_nombre_persona, $model->origen_direccion);
+
+        $json["ShipmentRequest"]["Shipment"]["PaymentInformation"] = [];
+        $json["ShipmentRequest"]["Shipment"]["PaymentInformation"]["ShipmentCharge"] = [];
+        $json["ShipmentRequest"]["Shipment"]["PaymentInformation"]["ShipmentCharge"]["Type"]= "01";
+        $json["ShipmentRequest"]["Shipment"]["PaymentInformation"]["ShipmentCharge"]["BillShipper"] = [];
+        $json["ShipmentRequest"]["Shipment"]["PaymentInformation"]["ShipmentCharge"]["BillShipper"]["AccountNumber"] = self::UPS_SHIPER_NUMBER;
+           
+
+        $json["ShipmentRequest"]["Shipment"]["Service"] = [];
+        $json["ShipmentRequest"]["Shipment"]["Service"]["Code"] = $model->tipo_servicio ;//"01"; //Tipo de envío
+        $json["ShipmentRequest"]["Shipment"]["Service"]["Description"] = "Service Code Description";
+    
+
+         //por cada paquete se agrega un elemento a la peticion
+         $listaPaquetes = [];
+         foreach($paquetes as $item){
+             $res = $this->createPakageCompra($item);
+             array_push($listaPaquetes, $res);
+         }
+         $json["ShipmentRequest"]["Shipment"]["Package"] = $listaPaquetes;
+ 
+
+        $json["ShipmentRequest"]["LabelSpecification"] = [];
+		$json["ShipmentRequest"]["LabelSpecification"]["LabelImageFormat"] = [];
+		$json["ShipmentRequest"]["LabelSpecification"]["LabelImageFormat"]["Code"] = "GIF";
+		$json["ShipmentRequest"]["LabelSpecification"]["LabelImageFormat"]["Description"] = "GIF";
+		$json["ShipmentRequest"]["LabelSpecification"]["HTTPUserAgent"] = "Mozilla/4.5";
+		
 
         $endpoint = $this->URL_SERVICE . 'Ship';
 
@@ -291,18 +211,40 @@ class UpsServices{
 
         
 
-        $res = new ResultadoEnvio();
+        $resultado = [];
+        
 
+        if(isset($responseData['ShipmentResponse']['ShipmentResults']['PackageResults']['TrackingNumber'])){
+            $res = new ResultadoEnvio();
                 $res->data           = json_encode($responseData);
-                $res->jobId          = $responseData['ShipmentResponse']['ShipmentResults']['ShipmentIdentificationNumber'];
+                $res->jobId          = $responseData['ShipmentResponse']['ShipmentResults']['PackageResults']['TrackingNumber'];
                 $res->envioCode      = $responseData['ShipmentResponse']['ShipmentResults']['PackageResults']['TrackingNumber'];
                 $res->envioCode2     = $responseData['ShipmentResponse']['ShipmentResults']['PackageResults']['TrackingNumber'];
                 $res->tipoEmpaque    = $servicePacking;
                 $res->tipoServicio   = $model->tipo_servicio;
                 $res->etiqueta       = $responseData['ShipmentResponse']['ShipmentResults']['PackageResults']['ShippingLabel']['GraphicImage'];
                 $res->etiquetaFormat = "GIF";
+    
+                array_push($resultado,$res);
+        }else{
+            //Multiples paquetes
+            foreach($responseData['ShipmentResponse']['ShipmentResults']['PackageResults'] as $item){
+                $res = new ResultadoEnvio();
+                $res->data           = json_encode($responseData);
+                $res->jobId          = $item['TrackingNumber'];
+                $res->envioCode      = $item['TrackingNumber'];
+                $res->envioCode2     = $item['TrackingNumber'];
+                $res->tipoEmpaque    = $servicePacking;
+                $res->tipoServicio   = $model->tipo_servicio;
+                $res->etiqueta       = $item['ShippingLabel']['GraphicImage'];
+                $res->etiquetaFormat = "GIF";
+    
+                array_push($resultado,$res);
+            }
+        }
+        
 
-                return $res;
+        return $resultado;
     }
 
     
@@ -336,15 +278,6 @@ class UpsServices{
         $json["RateRequest"]["Shipment"]["Package"]["PackagingType"] = [];
         $json["RateRequest"]["Shipment"]["Package"]["PackagingType"]["Code"] = self::PT_UPSLETTER; //SOBRE
         $json["RateRequest"]["Shipment"]["Package"]["PackagingType"]["Description"] = "SOBRE";
-                  
-        //$json["RateRequest"]["Shipment"]["Package"]["Dimensions"] = [];
-        //$json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["UnitOfMeasurement"] = [];
-        //$json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["UnitOfMeasurement"]["Code"] = "IN";
-        //$json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["UnitOfMeasurement"]["Description"] = "inches";
-                    
-        //$json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["Length"] = "5";
-        //$json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["Width"] = "4";
-        //$json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["Height"] = "3";
                   
         $json["RateRequest"]["Shipment"]["Package"]["PackageWeight"] = [];
         $json["RateRequest"]["Shipment"]["Package"]["PackageWeight"]["UnitOfMeasurement"] = [];
@@ -428,13 +361,83 @@ class UpsServices{
 
 
     /**
-     * Envío de sobre
+     * Crea el objeto de paquetes de cotizacion
      */
-    private function cotizarEnvioPaqueteInterno($tipo_servicio,$cp_origen,$estado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $peso, $largo,$ancho,$alto){
-
-        $json = [];
+    private function createPakageCotizacion($paquete){
 
         
+        $peso  = $paquete['num_peso'];
+        $largo = ceil($paquete['num_largo']);
+        $ancho = ceil($paquete['num_ancho']);
+        $alto  = ceil($paquete['num_alto']);
+
+        $json = [];
+        
+        $json["PackagingType"] = [];
+        $json["PackagingType"]["Code"] = self::PT_PACKAGE; //PAQUETE
+        $json["PackagingType"]["Description"] = "PAQUETE";
+                  
+        $json["Dimensions"] = [];
+        $json["Dimensions"]["UnitOfMeasurement"] = [];
+        $json["Dimensions"]["UnitOfMeasurement"]["Code"] = "CM";
+        $json["Dimensions"]["UnitOfMeasurement"]["Description"] = "Centimetros";
+                    
+        $json["Dimensions"]["Length"] = "" . $largo;
+        $json["Dimensions"]["Height"] = "" . $alto;
+        $json["Dimensions"]["Width"]  = "" . $ancho;
+                  
+        $json["PackageWeight"] = [];
+        $json["PackageWeight"]["UnitOfMeasurement"] = [];
+        $json["PackageWeight"]["UnitOfMeasurement"]["Code"] = "KGS";
+        $json["PackageWeight"]["UnitOfMeasurement"]["Description"] = "Kilos";
+                    
+        $json["PackageWeight"]["Weight"]= "". $peso;
+
+        return $json;      
+    }
+
+    private function createPakageCompra($paquete){
+        $peso  = $paquete->peso;
+        $largo = ceil($paquete->largo);
+        $ancho = ceil($paquete->ancho);
+        $alto  = ceil($paquete->alto);
+
+        $json = [];
+        
+        $json["Description"] = "Paquete 360";
+
+
+        $json["Packaging"] = [];
+        $json["Packaging"]["Code"] = self::PT_PACKAGE; //PAQUETE
+        $json["Packaging"]["Description"] = "PAQUETE";
+                  
+        $json["Dimensions"] = [];
+        $json["Dimensions"]["UnitOfMeasurement"] = [];
+        $json["Dimensions"]["UnitOfMeasurement"]["Code"] = "CM";
+        $json["Dimensions"]["UnitOfMeasurement"]["Description"] = "Centimetros";
+                    
+        $json["Dimensions"]["Length"] = "" . $largo;
+        $json["Dimensions"]["Height"] = "" . $alto;
+        $json["Dimensions"]["Width"]  = "" . $ancho;
+                  
+        $json["PackageWeight"] = [];
+        $json["PackageWeight"]["UnitOfMeasurement"] = [];
+        $json["PackageWeight"]["UnitOfMeasurement"]["Code"] = "KGS";
+        $json["PackageWeight"]["UnitOfMeasurement"]["Description"] = "Kilos";
+                    
+        $json["PackageWeight"]["Weight"]= "". $peso;
+
+        return $json; 
+    }
+
+   
+
+    /**
+     * Envío de sobre
+     */
+    private function cotizarEnvioPaqueteInterno($tipo_servicio,$cp_origen,$estado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $paquetes){
+        $json = [];
+
         $json["UPSSecurity"] = $this->getSecurity();
         
         $json["RateRequest"] = [];
@@ -448,31 +451,20 @@ class UpsServices{
         $json["RateRequest"]["Shipment"]["ShipTo"] = $this->getShipTo($cp_destino,$estado_destino,$pais_destino);
         $json["RateRequest"]["Shipment"]["ShipFrom"] = $this->getShipper($estado_origen,$cp_origen,$pais_origen);
 
-
-        $json["RateRequest"]["Shipment"]["Service"] = [];
         $json["RateRequest"]["Shipment"]["Service"]["Code"] = $tipo_servicio ;//"01"; //Tipo de envío
         $json["RateRequest"]["Shipment"]["Service"]["Description"] = "Service Code Description ";
-                
-        $json["RateRequest"]["Shipment"]["Package"] = [];
-        $json["RateRequest"]["Shipment"]["Package"]["PackagingType"] = [];
-        $json["RateRequest"]["Shipment"]["Package"]["PackagingType"]["Code"] = self::PT_PACKAGE; //PAQUETE
-        $json["RateRequest"]["Shipment"]["Package"]["PackagingType"]["Description"] = "PAQUETE";
-                  
-        $json["RateRequest"]["Shipment"]["Package"]["Dimensions"] = [];
-        $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["UnitOfMeasurement"] = [];
-        $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["UnitOfMeasurement"]["Code"] = "CM";
-        $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["UnitOfMeasurement"]["Description"] = "Centimetros";
-                    
-        $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["Length"] = "" . ceil($largo);
-        $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["Width"] = "" . ceil($ancho);
-        $json["RateRequest"]["Shipment"]["Package"]["Dimensions"]["Height"] = "" . ceil($alto);
-                  
-        $json["RateRequest"]["Shipment"]["Package"]["PackageWeight"] = [];
-        $json["RateRequest"]["Shipment"]["Package"]["PackageWeight"]["UnitOfMeasurement"] = [];
-        $json["RateRequest"]["Shipment"]["Package"]["PackageWeight"]["UnitOfMeasurement"]["Code"] = "KGS";
-        $json["RateRequest"]["Shipment"]["Package"]["PackageWeight"]["UnitOfMeasurement"]["Description"] = "Kilos";
-                    
-        $json["RateRequest"]["Shipment"]["Package"]["PackageWeight"]["Weight"]= "". $peso;
+
+        
+
+        //por cada paquete se agrega un elemento a la peticion
+        $listaPaquetes = [];
+        foreach($paquetes as $item){
+            $res = $this->createPakageCotizacion($item);
+            array_push($listaPaquetes, $res);
+
+            //$json["RateRequest"]["Shipment"]["Service"] = $res;
+        }
+        $json["RateRequest"]["Shipment"]["Package"] = $listaPaquetes;
         
         $json["RateRequest"]["Shipment"]["ShipmentRatingOptions"] = [];
         $json["RateRequest"]["Shipment"]["NegotiatedRatesIndicator"] =  "";
@@ -583,13 +575,22 @@ class UpsServices{
         return $json;
     }
 
-    private function getShipper($stado_origen,$cp_origen,$pais_origen){
+    private function getShipper($stado_origen,$cp_origen,$pais_origen, $shiperName = null, $direccion = null){
         $json = [];
-        $json["Name"] = "Shipper Name";
+        if($shiperName == null){
+            $json["Name"] = "Shipper Name";
+        }else{
+            $json["Name"] = $shiperName;
+        }
         $json["ShipperNumber"] =  self::UPS_SHIPER_NUMBER;
         
         $json["Address"] = [];
-        $json["Address"]["AddressLine"] = ["Address Line ", "Address Line ", "Address Line "];
+        if($direccion != null){
+            $json["Address"]["AddressLine"] = str_split($direccion, 30);
+        }else{
+            $json["Address"]["AddressLine"] = ["Address Line ", "Address Line ", "Address Line "];
+        }
+        
         $json["Address"]["City"] =  self::UPS_RATE_CITY;
         $json["Address"]["StateProvinceCode"] =  $stado_origen;
         $json["Address"]["PostalCode"] =  $cp_origen;
@@ -598,11 +599,15 @@ class UpsServices{
         return $json;
     }
 
-    private function getShipTo($cp_destino, $estado_destino, $pais_destino){
+    private function getShipTo( $estado_destino, $cp_destino,$pais_destino, $direccion = null){
         $json = [];
         $json["Name"] =  "Ship To Name";
         $json["Address"] = [];
-        $json["Address"]["AddressLine"] = ["Address Line ", "Address Line ", "Address Line "];
+        if($direccion != null){
+            $json["Address"]["AddressLine"] = str_split($direccion, 30);
+        }else{
+            $json["Address"]["AddressLine"] = ["Address Line ", "Address Line ", "Address Line "];
+        }
         $json["Address"]["City"] =  self::UPS_RATE_CITY;
         $json["Address"]["StateProvinceCode"] =  $estado_destino;
         $json["Address"]["PostalCode"] =  $cp_destino;

@@ -123,5 +123,13 @@ class EstafetaServices{
         }
         return $res;
     }
+
+    function comprarEnvioPaquete(CompraEnvio $model){
+        throw new HttpException(500,"Compra envio paquete Estafeta no implementado");
+    }
+
+    function comprarEnvioDocumento($compra){
+        throw new HttpException(500,"Compra envio documento Estafeta no implementado");
+    }
 }
 ?>

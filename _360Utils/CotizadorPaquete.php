@@ -12,7 +12,7 @@ class CotizadorPaquete{
 
     //Servicios habilitaos
     const USE_FEDEX       = TRUE; // Habilita FEDEX
-    const USE_UPS         = FALSE; //Habilita UPS
+    const USE_UPS         = TRUE; //Habilita UPS
     const USE_ESTAFETA    = FALSE; // Habilita ESTAFETA
 
 
@@ -31,25 +31,33 @@ class CotizadorPaquete{
        // UTILIZA FEDEX ---------------------------------
        if(self::USE_FEDEX){
             $res = $this->cotizaPaqueteFedex($json, $paquetes);
-            $data = array_merge($data, $res);    
+            if($res != null){
+                $data = array_merge($data, $res);
+            }   
         }
 
         // UTILIZA 2GOM ---------------------------------
         if(self::USE_DGOM){
             $res = $this->cotizaDocumentoDGOM($json, $paquetes);
-            $data = array_merge($data, $res);
+            if($res != null){
+                $data = array_merge($data, $res);
+            }
         }
 
         // UTILIZA UPS ---------------------------------
         if(self::USE_UPS){
             $res = $this->cotizaPaqueteUps($json, $paquetes);
-            $data = array_merge($data, $res);
+            if($res != null){
+                $data = array_merge($data, $res);
+            }
         }
 
         // UTILIZA ESTAFETA ---------------------------------
         if(self::USE_ESTAFETA){
             $res = $this->cotizaPaqueteEstafeta($json, $paquetes);
-            $data = array_merge($data, $res);
+            if($res != null){
+                $data = array_merge($data, $res);
+            }
         }
 
     return $data;
@@ -62,7 +70,7 @@ class CotizadorPaquete{
     private function cotizaPaqueteFedex($json, $paquetes){
         $fedex = new FedexServices();
         //fecha actual
-        $fecha = date('Y-m-d');//"2018-10-06";
+        $fecha = date('Y-m-d');
         $disponiblidad = $fedex->disponibilidadPaquete($json->cp_origen, $json->pais_origen, $json->cp_destino, $json->pais_destino, $fecha);
 
         if(!$disponiblidad){

@@ -13,9 +13,9 @@ use app\_360Utils\Services\EstafetaServices;
 class CotizadorSobre{
 
       //Servicios habilitaos
-      const USE_FEDEX       = FALSE; // Habilita FEDEX
+      const USE_FEDEX       = TRUE; // Habilita FEDEX
       const USE_UPS         = TRUE; //Habilita UPS
-      const USE_ESTAFETA    = FALSE; // Habilita ESTAFETA
+      const USE_ESTAFETA    = TRUE; // Habilita ESTAFETA
 
 
       const USE_DGOM        = false; //HABILITA DGOM
@@ -120,7 +120,7 @@ class CotizadorSobre{
 
         $fedex = new FedexServices();
         //FIXME: fecha actual
-        $fecha = "2018-10-06";
+        $fecha = date('Y-m-d');
         $disponiblidad = $fedex->disponibilidadDocumento($json->cp_origen, $json->pais_origen, $json->cp_destino, $json->pais_destino, $fecha);
 
         if(!$disponiblidad){

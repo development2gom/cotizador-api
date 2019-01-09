@@ -1227,18 +1227,13 @@ class ApiController extends Controller
 
     public function actionGuardarFactura(){
         $request = Yii::$app->request;
-        $response = new ResponseServices(); 
+        $uddiCliente = $request->getBodyParam('uddi_cliente');
+        $rfc = $request->getBodyParam('rfc');
+        $cliente = EntClientes::getClienteByUddi($uddiCliente);
 
-        $factura = new EntFacturacion();
-        if($factura->load($request->bodyParams, "")){
-            $factura->uddi = Utils::generateToken("fac_");
-            
-            if($factura->save()){
-                $response->status = 'success';
-                $response->message = 'Factura guardada';
-                $response->result = $factura;
-            }
-        }
-        return $response;
+        $cliente->txt_rfc = $rfc;
+        $cliente->save(false);
+       
+        return $cliente;
     }
 }

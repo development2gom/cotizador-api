@@ -352,6 +352,9 @@ class EnviosController extends Controller{
 
         $resEnvios = [];
         foreach($res as $item){
+            if($item->isError){
+                continue;
+            }
             //almacena la respuesta en la base de datos
             $wrkResultadoEnvio = new WrkResultadosEnvios();
             $wrkResultadoEnvio->uddi = Utils::generateToken('res_env_');

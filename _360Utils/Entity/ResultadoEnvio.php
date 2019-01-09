@@ -14,6 +14,8 @@ class ResultadoEnvio{
     var $etiqueta;
     var $etiquetaFormat = "PDF";
     var $data;
+    var $isError;
+    var $errorMessage;
 
 }
 

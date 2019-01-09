@@ -46,14 +46,15 @@ class OpenPay{
 
     public function generarOrdenCompra($orderOpenPay, $barcodeUrl=null, $pagado=0, $referencia=null){
 
-        $ordenCompra = new EntOrdenesCompras();
-        $ordenCompra->id_cliente = $this->idCliente;
-        $ordenCompra->id_envio = $this->idEnvio;
-        $ordenCompra->txt_descripcion = $this->description;
+        $ordenCompra                     = new EntOrdenesCompras();
+        $ordenCompra->id_cliente         = $this->idCliente;
+        $ordenCompra->id_envio           = $this->idEnvio;
+        $ordenCompra->txt_descripcion    = $this->description;
         $ordenCompra->txt_order_open_pay = $orderOpenPay;
-        $ordenCompra->txt_order_number = $this->orderId;
-        $ordenCompra->b_pagado = $pagado;
-        $ordenCompra->txt_referencia = $referencia;
+        $ordenCompra->txt_order_number   = $this->orderId;
+        $ordenCompra->b_pagado           = $pagado;
+        $ordenCompra->txt_referencia     = $referencia;
+        $ordenCompra->fch_limite               = Calendario::getFechaActual();
 
         if($pagado){
             $ordenCompra->fch_pago = Calendario::getFechaActual();

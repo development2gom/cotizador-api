@@ -305,7 +305,7 @@ class FedexServices{
             //Realiza el envio
             $resultadoEnvio = $this->realizaEnvioCompra($model,$request,$servicePacking);
             //Toma el $MasterTrackingId del primer envio para enviarlo en los subsecuentes
-            if($MasterTrackingId == null){
+            if($MasterTrackingId == null && $resultadoEnvio != null && $resultadoEnvio->isError == false){
                 $MasterTrackingId = $resultadoEnvio->envioCode;
             }
 
@@ -447,6 +447,11 @@ class FedexServices{
 
             }else{
                 printError($client, $response);
+                $res = new ResultadoEnvio();
+                $res->isError       = true;
+                $res->errorMessage  = $response->Notifications->Message;
+                $res->data          = json_encode($response);
+                return $res;
             }
         
             writeToLog($client);    // Write to log file

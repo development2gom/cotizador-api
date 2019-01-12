@@ -5,19 +5,20 @@ namespace app\_360Utils;
 use app\_360Utils\Services\UpsServices;
 use app\_360Utils\Services\FedexServices;
 use app\_360Utils\Services\EstafetaServices;
+use app\_360Utils\Services\DhlServices;
 
 
 class CotizadorPaquete{
     
 
     //Servicios habilitaos
-    const USE_FEDEX       = TRUE; // Habilita FEDEX
-    const USE_UPS         = TRUE; //Habilita UPS
-    const USE_ESTAFETA    = TRUE; // Habilita ESTAFETA
+    const USE_FEDEX       = false; // Habilita FEDEX
+    const USE_UPS         = false; //Habilita UPS
+    const USE_ESTAFETA    = false; // Habilita ESTAFETA
+    const USE_DHL         = TRUE;
 
 
-    const USE_DGOM        = false; //HABILITA DGOM
-
+    
 
     /**
      * Realiza la cotización de los paquetes recibidos
@@ -36,9 +37,9 @@ class CotizadorPaquete{
             }   
         }
 
-        // UTILIZA 2GOM ---------------------------------
-        if(self::USE_DGOM){
-            $res = $this->cotizaDocumentoDGOM($json, $paquetes);
+        // UTILIZA USE_DHL ---------------------------------
+        if(self::USE_DHL){
+            $res = $this->cotizaPaqueteDHL($json, $paquetes);
             if($res != null){
                 $data = array_merge($data, $res);
             }
@@ -128,6 +129,18 @@ class CotizadorPaquete{
         $ups = new UpsServices();
         $fecha = "";
         $cotizaciones = $ups->cotizarEnvioPaquete($json->cp_origen, $json->estado_origen, $json->pais_origen, $json->cp_destino, $json->estado_destino , $json->pais_destino, $fecha,  $paquetes);
+
+        return $cotizaciones;
+    }
+
+
+    //--------------- DHL -----------------------
+
+
+    private function cotizaPaqueteDhl($json, $paquetes){
+        $dhl = new DhlServices();
+        $fecha = date('c');
+        $cotizaciones = $dhl->cotizarEnvioPaquete($json->cp_origen, $json->pais_origen, $json->cp_destino,  $json->pais_destino, $fecha,  $paquetes);
 
         return $cotizaciones;
     }

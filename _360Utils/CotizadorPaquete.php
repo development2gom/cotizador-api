@@ -6,16 +6,17 @@ use app\_360Utils\Services\UpsServices;
 use app\_360Utils\Services\FedexServices;
 use app\_360Utils\Services\EstafetaServices;
 use app\_360Utils\Services\DhlServices;
+use app\_360Utils\Entity\CotizacionRequest;
 
 
 class CotizadorPaquete{
     
 
     //Servicios habilitaos
-    const USE_FEDEX       = false; // Habilita FEDEX
-    const USE_UPS         = false; //Habilita UPS
-    const USE_ESTAFETA    = false; // Habilita ESTAFETA
-    const USE_DHL         = TRUE;
+    const USE_FEDEX       = true; // Habilita FEDEX
+    const USE_UPS         = true; //Habilita UPS
+    const USE_ESTAFETA    = true; // Habilita ESTAFETA
+    const USE_DHL         = true;
 
 
     
@@ -23,7 +24,7 @@ class CotizadorPaquete{
     /**
      * Realiza la cotización de los paquetes recibidos
      */
-    function realizaCotizacion($json, $paquetes){
+    function realizaCotizacion(CotizacionRequest $cotizacionRequest){
     
         //Resultado de la busqueda
         $data = [];
@@ -31,15 +32,15 @@ class CotizadorPaquete{
        
        // UTILIZA FEDEX ---------------------------------
        if(self::USE_FEDEX){
-            $res = $this->cotizaPaqueteFedex($json, $paquetes);
-            if($res != null){
-                $data = array_merge($data, $res);
+            $res = $this->cotizaPaqueteFedex($cotizacionRequest);
+                if($res != null){
+                $data = array_merge($data,$res);
             }   
         }
 
         // UTILIZA USE_DHL ---------------------------------
         if(self::USE_DHL){
-            $res = $this->cotizaPaqueteDHL($json, $paquetes);
+            $res = $this->cotizaPaqueteDHL($cotizacionRequest);
             if($res != null){
                 $data = array_merge($data, $res);
             }
@@ -47,7 +48,7 @@ class CotizadorPaquete{
 
         // UTILIZA UPS ---------------------------------
         if(self::USE_UPS){
-            $res = $this->cotizaPaqueteUps($json, $paquetes);
+            $res = $this->cotizaPaqueteUps($cotizacionRequest);
             if($res != null){
                 $data = array_merge($data, $res);
             }
@@ -55,7 +56,7 @@ class CotizadorPaquete{
 
         // UTILIZA ESTAFETA ---------------------------------
         if(self::USE_ESTAFETA){
-            $res = $this->cotizaPaqueteEstafeta($json, $paquetes);
+            $res = $this->cotizaPaqueteEstafeta($cotizacionRequest);
             if($res != null){
                 $data = array_merge($data, $res);
             }
@@ -68,11 +69,12 @@ class CotizadorPaquete{
 
     // ----------------- FEDEX ---------------------
 
-    private function cotizaPaqueteFedex($json, $paquetes){
+    private function cotizaPaqueteFedex(CotizacionRequest $cotizacion){
         $fedex = new FedexServices();
         //fecha actual
         $fecha = date('Y-m-d');
-        $disponiblidad = $fedex->disponibilidadPaquete($json->cp_origen, $json->pais_origen, $json->cp_destino, $json->pais_destino, $fecha);
+        $cotizacion->fecha = $fecha;
+        $disponiblidad = $fedex->disponibilidadPaquete($cotizacion);
 
         if(!$disponiblidad){
             return [];
@@ -84,23 +86,16 @@ class CotizadorPaquete{
         $data['notifications']  = $disponiblidad->Notifications;
         $data['options']        = $disponiblidad->Options;
 
-        // Fecha actual 
-        $fecha = date('c');
+        
 
         $cotizaciones = [];
         $count = 0;
         foreach($data['options'] as $item){
             $service = $item->Service;
 
-            $cotizacion = $fedex->cotizarEnvioPaquete($service, $json->cp_origen, $json->pais_origen, $json->cp_destino, $json->pais_destino, $fecha, $paquetes);
-            if($cotizacion){
-                array_push($cotizaciones, $cotizacion);
-            }
-
-            //FIXME: Limita el resultado de FEDEX
-            $count++;
-            if($count >1){
-                break;
+            $_cotizacion = $fedex->cotizarEnvioPaquete($service, $cotizacion);
+            if($_cotizacion){
+                array_push($cotizaciones, $_cotizacion);
             }
         }
 
@@ -108,16 +103,16 @@ class CotizadorPaquete{
     }
 
      // ----------------------------- COTIZACION ESTAFETA ----------------------------------------
-     private function cotizaPaqueteEstafeta($json, $paquetes){
+     private function cotizaPaqueteEstafeta(CotizacionRequest $cotizacionRequest){
         //Estafeta solo tiene entregas de MX a MX, en caso contrario, no se pide la cotizacón
-        if($json->pais_origen != "MX" || $json->pais_destino != "MX"){
+        if($cotizacionRequest->origenCountry != "MX" || $cotizacionRequest->destinoCountry != "MX"){
             return null;
         }
 
 
         $estafeta = new EstafetaServices();
         $fecha = "";
-        $cotizaciones = $estafeta->cotizarEnvioPaquete($json->cp_origen,  $json->cp_destino, $fecha, $paquetes);
+        $cotizaciones = $estafeta->cotizarEnvioPaquete($cotizacionRequest);
         return $cotizaciones;
     }
 
@@ -125,10 +120,10 @@ class CotizadorPaquete{
     //--------------- UPS -----------------------
 
 
-    private function cotizaPaqueteUps($json, $paquetes){
+    private function cotizaPaqueteUps(CotizacionRequest $cotizacionRequest){
         $ups = new UpsServices();
         $fecha = "";
-        $cotizaciones = $ups->cotizarEnvioPaquete($json->cp_origen, $json->estado_origen, $json->pais_origen, $json->cp_destino, $json->estado_destino , $json->pais_destino, $fecha,  $paquetes);
+        $cotizaciones = $ups->cotizarEnvioPaquete($cotizacionRequest);
 
         return $cotizaciones;
     }
@@ -137,10 +132,10 @@ class CotizadorPaquete{
     //--------------- DHL -----------------------
 
 
-    private function cotizaPaqueteDhl($json, $paquetes){
+    private function cotizaPaqueteDhl(CotizacionRequest $cotizacion){
         $dhl = new DhlServices();
         $fecha = date('c');
-        $cotizaciones = $dhl->cotizarEnvioPaquete($json->cp_origen, $json->pais_origen, $json->cp_destino,  $json->pais_destino, $fecha,  $paquetes);
+        $cotizaciones = $dhl->cotizarEnvioPaquete($cotizacion);
 
         return $cotizaciones;
     }

@@ -8,6 +8,8 @@ use Yii;
 use app\_360Utils\Entity\Cotizacion;
 use app\_360Utils\Entity\CompraEnvio;
 use app\_360Utils\Entity\ResultadoEnvio;
+use app\_360Utils\Entity\CotizacionRequest;
+use app\_360Utils\Entity\Paquete;
 
 class UpsServices{
 
@@ -114,12 +116,12 @@ class UpsServices{
     }
 
 
-    function cotizarEnvioPaquete($cp_origen,$stado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $paquetes){
+    function cotizarEnvioPaquete(CotizacionRequest $cotizacionRequest){
         $servicios = [self::S_AIR_1DAY,self::S_AIR_2DAY,self::S_GROUND, self::S_AIR_1DAYEARLYAM,self::S_3DAYSELECT];
         $responses = [];
 
         foreach($servicios as $item){
-            $res = $this->cotizarEnvioPaqueteInterno($item,$cp_origen,$stado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $paquetes);
+            $res = $this->cotizarEnvioPaqueteInterno($item, $cotizacionRequest);
             if($res != null){
                 array_push($responses,$res);
             }
@@ -363,13 +365,13 @@ class UpsServices{
     /**
      * Crea el objeto de paquetes de cotizacion
      */
-    private function createPakageCotizacion($paquete){
+    private function createPakageCotizacion(Paquete $paquete){
 
         
-        $peso  = $paquete['num_peso'];
-        $largo = ceil($paquete['num_largo']);
-        $ancho = ceil($paquete['num_ancho']);
-        $alto  = ceil($paquete['num_alto']);
+        $peso  = $paquete->peso;//['num_peso'];
+        $largo = ceil($paquete->largo);
+        $ancho = ceil($paquete->ancho);
+        $alto  = ceil($paquete->alto);
 
         $json = [];
         
@@ -435,7 +437,8 @@ class UpsServices{
     /**
      * Envío de sobre
      */
-    private function cotizarEnvioPaqueteInterno($tipo_servicio,$cp_origen,$estado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $paquetes){
+    private function cotizarEnvioPaqueteInterno($tipo_servicio,CotizacionRequest $cotizacionRequest){
+        //$cp_origen,$estado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $paquetes
         $json = [];
 
         $json["UPSSecurity"] = $this->getSecurity();
@@ -447,9 +450,9 @@ class UpsServices{
         $json["RateRequest"]["Request"]["TransactionReference"]["CustomerContext"] = self::UPS_CUSTOMER_CONTEXT;
               
         $json["RateRequest"]["Shipment"] = [];
-        $json["RateRequest"]["Shipment"]["Shipper"] = $this->getShipper($estado_origen,$cp_origen,$pais_origen);
-        $json["RateRequest"]["Shipment"]["ShipTo"] = $this->getShipTo($cp_destino,$estado_destino,$pais_destino);
-        $json["RateRequest"]["Shipment"]["ShipFrom"] = $this->getShipper($estado_origen,$cp_origen,$pais_origen);
+        $json["RateRequest"]["Shipment"]["Shipper"] = $this->getShipper($cotizacionRequest->origenStateCode,$cotizacionRequest->origenCP,$cotizacionRequest->origenCountry);
+        $json["RateRequest"]["Shipment"]["ShipTo"] = $this->getShipTo($cotizacionRequest->destinoCP, $cotizacionRequest->destinoStateCode,$cotizacionRequest->destinoCountry);
+        $json["RateRequest"]["Shipment"]["ShipFrom"] = $this->getShipper($cotizacionRequest->origenStateCode,$cotizacionRequest->origenCP,$cotizacionRequest->origenCountry);
 
         $json["RateRequest"]["Shipment"]["Service"]["Code"] = $tipo_servicio ;//"01"; //Tipo de envío
         $json["RateRequest"]["Shipment"]["Service"]["Description"] = "Service Code Description ";
@@ -458,7 +461,7 @@ class UpsServices{
 
         //por cada paquete se agrega un elemento a la peticion
         $listaPaquetes = [];
-        foreach($paquetes as $item){
+        foreach($cotizacionRequest->paquetes as $item){
             $res = $this->createPakageCotizacion($item);
             array_push($listaPaquetes, $res);
 

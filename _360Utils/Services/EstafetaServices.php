@@ -8,6 +8,7 @@ use Yii;
 use app\_360Utils\Entity\Cotizacion;
 use app\_360Utils\Entity\CompraEnvio;
 use app\_360Utils\Entity\ResultadoEnvio;
+use app\_360Utils\Entity\CotizacionRequest;
 
 class EstafetaServices{
 
@@ -28,32 +29,32 @@ class EstafetaServices{
     ];
 
 
-    function cotizarEnvioDocumento($origenCP,$destinoCP,$fecha, $paquetes, $montoSeguro = false){
-        return $this->cotizarEnvio($origenCP,$destinoCP,$fecha, $paquetes, false);
+    function cotizarEnvioDocumento(CotizacionRequest $cotizacionRequest){
+        return $this->cotizarEnvio($cotizacionRequest);
     }
 
-    function cotizarEnvioPaquete($origenCP,$destinoCP,$fecha, $paquetes, $montoSeguro = false){
-        return $this->cotizarEnvio($origenCP,$destinoCP,$fecha, $paquetes, true);
+    function cotizarEnvioPaquete(CotizacionRequest $cotizacionRequest){
+        return $this->cotizarEnvio($cotizacionRequest);
     }
 
            
-    private function cotizarEnvio($origenCP,$destinoCP,$fecha, $paquetes, $isPaquete){
+    private function cotizarEnvio(CotizacionRequest $cotizacionRequest){
 
         //TODO manejar varios paquete
-        if($isPaquete){
-            $largo = $paquetes[0]['num_largo'];
-            $ancho = $paquetes[0]['num_largo'];
-            $alto = $paquetes[0]['num_largo'];
-            $peso = $paquetes[0]['num_peso'];
+        if($cotizacionRequest->isPaquete){
+            $largo = $cotizacionRequest->paquetes[0]->largo;
+            $ancho = $cotizacionRequest->paquetes[0]->ancho;
+            $alto = $cotizacionRequest->paquetes[0]->alto;
+            $peso = $cotizacionRequest->paquetes[0]->peso;
         }else{
             $largo  = '' . self::SOBRE_LARGO;
             $ancho  = '' . self::SOBRE_ANCHO;
             $alto   = '' . self::SOBRE_ALTO;
-            $peso   = '' . $paquetes[0]['num_peso'];
+            $peso   = '' . $cotizacionRequest->paquetes[0]->peso;
         }
 
         
-        $path_to_wsdl = Yii::getAlias('@app') . '/_360Utils/shipment-carriers/estafeta/wsdl/Frecuenciacotizador.wsdl';
+        $path_to_wsdl = Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/estafeta/wsdl/Frecuenciacotizador.wsdl';
         ini_set("soap.wsdl_cache_enabled", "0");
 
         $client = new \SoapClient($path_to_wsdl, array('trace' => 1));
@@ -66,17 +67,17 @@ class EstafetaServices{
         $request['esLista'] = true;
         
         
-        $request['tipoEnvio']['EsPaquete'] = $isPaquete; //Define si es un paquete o no
+        $request['tipoEnvio']['EsPaquete'] = $cotizacionRequest->isPaquete; //Define si es un paquete o no
         $request['tipoEnvio']['Largo']     = $largo;
         $request['tipoEnvio']['Peso']      = $peso;
         $request['tipoEnvio']['Alto']      = $alto;
         $request['tipoEnvio']['Ancho']     = $ancho;
 
         $request['datosOrigen'] = [];
-        $request['datosOrigen']['string'] = $origenCP;
+        $request['datosOrigen']['string'] = $cotizacionRequest->origenCP;
         
         $request['datosDestino'] = [];
-        $request['datosDestino']['string'] = $destinoCP;
+        $request['datosDestino']['string'] = $cotizacionRequest->destinoCP;
         
 
 

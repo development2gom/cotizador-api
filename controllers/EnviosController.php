@@ -26,6 +26,7 @@ use app\_360Utils\Services\GeoNamesServices;
 use app\_360Utils\CompraPaquete;
 use app\models\WrkResultadosEnvios;
 use app\_360Utils\CompraSobre;
+use app\_360Utils\Entity\CotizacionRequest;
 
 
 class EnviosController extends Controller{
@@ -146,158 +147,61 @@ class EnviosController extends Controller{
         }
     }
 
-    /**
-     * Action para la cotizacion
-     */
-    public function actionCotizar(){
-        $request = Yii::$app->request;
-        $params = $request->bodyParams;
-
-        $cpFrom = $request->getBodyParam("cp_from");
-        $cpTo = $request->getBodyParam("cp_to");
-        $countryCodeFrom = $request->getBodyParam("country_code_from");
-        $countryCodeTo = $request->getBodyParam("country_code_to");
-        $tipoPaquete = $request->getBodyParam("tipo_paquete");
-        $paquetesRequest = $request->getBodyParam("dimensiones_paquete");
-        $dimenSobre = $request->getBodyParam("dimensiones_sobre");
-        $paquetes = [];
-
-        if(!$tipoPaquete){
-            throw new HttpException(500, "No se envio el tipo de paquete");
-        }
-
-        if(strtoupper($tipoPaquete)=="SOBRE"){
-            $paquetes[]=[
-                "num_peso"=>$dimenSobre["num_peso"],
-                "num_alto"=>0,
-                "num_ancho"=>0,
-                "num_largo"=>0
-            ];
-        }else{
-            foreach($paquetesRequest as $paquete){
-                if($paquete["num_paquetes"]>1){
-                    for($i=0; $i<$paquete["num_paquetes"]; $i++){
-                        $paquetes[]=[
-                            "num_peso"=>$paquete["num_peso"],
-                            "num_alto"=>$paquete["num_alto"],
-                            "num_ancho"=>$paquete["num_ancho"],
-                            "num_largo"=>$paquete["num_largo"]
-                        ];
-                    }
-                }else{
-                    $paquetes[]=[
-                        "num_peso"=>$paquete["num_peso"],
-                        "num_alto"=>$paquete["num_alto"],
-                        "num_ancho"=>$paquete["num_ancho"],
-                        "num_largo"=>$paquete["num_largo"]
-                    ];
-                }
-                
-            }
-        }
-
-        $respuesta = [];
-        for($i = 0; $i<3; $i++){
-            $eo = new EnviosObject();
-            $eo->cpOrigen = "54710";
-            $eo->cpDestino = "57349";
-            $eo->precioOriginal = 258+$i;
-            $eo->precioCliente = 258+($i+1);
-            $eo->mensajeria = "FEDEX";
-            $eo->fechaEntrega = "2018-11-26";    
-            $eo->tipoEnvio = "Express";
-            $eo->urlImagen = Yii::$app->urlManager->createAbsoluteUrl([''])."images/fedex.jpg";
-
-            $respuesta[] = $eo;
-        }
-
-        //return $respuesta;
-
-        $fedex = new Fedex($tipoPaquete);
-        
-        return $fedex->getFedex($cpFrom, $cpTo, $countryCodeFrom, $countryCodeTo, $paquetes,$tipoPaquete);
-
-    }
+   
 
     /**
-     * Action para la cotizacion
+     * Action para la cotizacion de un envio ya sea paquete o sea sobre
      */
     public function actionCotizarV2(){
         $request = Yii::$app->request;
         $params = $request->bodyParams;
 
-        $cpFrom = $request->getBodyParam("cp_from");
-        $cpTo = $request->getBodyParam("cp_to");
-        $stateCodeFrom = $request->getBodyParam("state_code_from");
-        $stateCodeTo= $request->getBodyParam("state_code_to");
-
-        $countryCodeFrom = $request->getBodyParam("country_code_from");
-        $countryCodeTo = $request->getBodyParam("country_code_to");
         $tipoPaquete = $request->getBodyParam("tipo_paquete");
-        $paquetesRequest = $request->getBodyParam("dimensiones_paquete");
-        $dimenSobre = $request->getBodyParam("dimensiones_sobre");
-        $paquetes = [];
 
         if(!$tipoPaquete){
             throw new HttpException(500, "No se envio el tipo de paquete");
         }
+        $cotizacion                   = new CotizacionRequest();
+        $cotizacion->origenCP         = $request->getBodyParam("cp_from");
+        $cotizacion->origenCountry    = $request->getBodyParam("country_code_from");
+        $cotizacion->origenStateCode  = $request->getBodyParam("state_code_from");
 
-        if(strtoupper($tipoPaquete)=="SOBRE"){
-            $paquetes[]=[
-                "num_peso"=>$dimenSobre["num_peso"]/1000,
-                "num_alto"=>0,
-                "num_ancho"=>0,
-                "num_largo"=>0
-            ];
-        }else{
-            foreach($paquetesRequest as $paquete){
-                if($paquete["num_paquetes"]>1){
-                    for($i=0; $i<$paquete["num_paquetes"]; $i++){
-                        $paquetes[]=[
-                            "num_peso"=>$paquete["num_peso"],
-                            "num_alto"=>$paquete["num_alto"],
-                            "num_ancho"=>$paquete["num_ancho"],
-                            "num_largo"=>$paquete["num_largo"]
-                        ];
-                    }
-                }else{
-                    $paquetes[]=[
-                        "num_peso"=>$paquete["num_peso"],
-                        "num_alto"=>$paquete["num_alto"],
-                        "num_ancho"=>$paquete["num_ancho"],
-                        "num_largo"=>$paquete["num_largo"]
-                    ];
-                }
-                
-            }
-        }
+        $cotizacion->destinoCP        = $request->getBodyParam("cp_to");
+        $cotizacion->destinoCountry   = $request->getBodyParam("country_code_to");
+        $cotizacion->destinoStateCode = $request->getBodyParam("state_code_to");
 
        
 
-        if(strtoupper($tipoPaquete)=="SOBRE"){
-            $json = (object)[
-                "cp_origen"=>$cpFrom,
-                "pais_origen"=>$countryCodeFrom,
-                "estado_origen"=>$stateCodeTo,
-                "cp_destino"=>$cpTo,
-                "pais_destino"=>$countryCodeTo,
-                "estado_destino"=>$stateCodeTo,
-            ];
-            $cotizador = new CotizadorSobre();
-            return $cotizador->realizaCotizacion($json,  $paquetes); // Agregar arreglo con paquetes
-        }else{
 
-            $json = (object)[
-                "cp_origen"=>$cpFrom,
-                "pais_origen"=>$countryCodeFrom,
-                "estado_origen"=>$stateCodeTo,
-                "cp_destino"=>$cpTo,
-                "pais_destino"=>$countryCodeTo,
-                "estado_destino"=>$stateCodeTo,
-            ];
-            $cotizador = new CotizadorPaquete();
-             return $cotizador->realizaCotizacion($json, $paquetes);
+
+        if(strtoupper($tipoPaquete)=="SOBRE"){
+            $cotizacion->isPaquete = false;
+            $dimenSobre = $request->getBodyParam("dimensiones_sobre");
+            $cotizacion->addSobre($dimenSobre["num_peso"]/1000);
+        }else{
+            $cotizacion->isPaquete = true;
+            $paquetesRequest = $request->getBodyParam("dimensiones_paquete");
+           
+            foreach($paquetesRequest as $paquete){
+                // if($paquete["num_paquetes"]>1){
+                //     for($i=0; $i<$paquete["num_paquetes"]; $i++){
+                //         $cotizacion->addPaqueteElementos($paquete["num_alto"],$paquete["num_ancho"],$paquete["num_largo"],$paquete["num_peso"]);
+                //     }
+                // }else{
+                    $cotizacion->addPaqueteElementos($paquete["num_alto"],$paquete["num_ancho"],$paquete["num_largo"],$paquete["num_peso"]);
+               // } 
+            }
         }
+
+
+        //Llama al servicio de contizacion pertinente
+       if($cotizacion->isPaquete){
+            $cotizador = new CotizadorPaquete();
+            return $cotizador->realizaCotizacion($cotizacion);
+       }else{
+            $cotizador = new CotizadorSobre();
+            return $cotizador->realizaCotizacion($cotizacion);
+       }
     }
 
 

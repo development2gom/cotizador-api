@@ -7,12 +7,17 @@ use app\_360Utils\Services\FedexServices;
 use app\_360Utils\Services\EstafetaServices;
 use app\_360Utils\Entity\CompraEnvio;
 use yii\web\HttpException;
+use app\_360Utils\Services\DhlServices;
 
 
 class CompraPaquete{
 
 
     function comprarPaquete(CompraEnvio $compra){
+
+
+       
+
         switch(strtoupper( $compra->carrier)){
             case "FEDEX":
                 $fedex = new FedexServices();
@@ -25,6 +30,10 @@ class CompraPaquete{
             case "ESTAFETA":
                 $estafeta = new EstafetaServices();
                 $res = $estafeta->comprarEnvioPaquete($compra);
+                return $res;
+            case "DHL":
+                $dhl = new DhlServices();
+                $res = $dhl->comprarEnvioPaquete($compra);
                 return $res;
             default:
                 throw new HttpException(500,"Carrier selecconado no implementado " . $compra->carrier );

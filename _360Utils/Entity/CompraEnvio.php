@@ -21,6 +21,8 @@ class CompraEnvio{
     var $origen_nombre_persona;
     var $origen_telefono;
     var $origen_compania;
+    var $origen_correo;
+
     var $destino_cp;
     var $destino_pais;
     var $destino_ciudad;
@@ -29,10 +31,25 @@ class CompraEnvio{
     var $destino_nombre_persona;
     var $destino_telefono;
     var $destino_compania;
+    var $destino_correo;
+
+    var $valorSeguro = 0;
+
+    var  $fecha = "2019-01-15";
+
     var $paquetes = [];
 
     function addPaquete(Paquete $paquete){
         array_push($this->paquetes,$paquete);
+    }
+
+    function getTotalWeight(){
+        $res = 0.0;
+        foreach($this->paquetes as $item){
+            $res += $item->peso;
+        }
+
+        return $res;
     }
   
  }

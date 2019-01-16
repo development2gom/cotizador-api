@@ -8,6 +8,7 @@ use Yii;
 use app\_360Utils\Entity\Cotizacion;
 use app\_360Utils\Entity\CompraEnvio;
 use app\_360Utils\Entity\ResultadoEnvio;
+use app\_360Utils\Entity\CotizacionRequest;
 
 class FedexServices{
 
@@ -23,22 +24,28 @@ class FedexServices{
 
 
 
-    function disponibilidadDocumento($origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha){
+    function disponibilidadDocumento(CotizacionRequest $cotizacion){
         //Corresponde a un documento
-        return $this->disponibilidad($origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha , 'FEDEX_ENVELOPE');
+        $cotizacion->packingType = 'FEDEX_ENVELOPE';
+        return $this->disponibilidad($origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha );
     }
 
 
-    function disponibilidadPaquete($origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha){
+    function disponibilidadPaquete(CotizacionRequest $cotizacion){
         //Corresponde a un paquete
-        return $this->disponibilidad($origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha , 'YOUR_PACKAGING');
+        $cotizacion->packingType = 'YOUR_PACKAGING';
+        return $this->disponibilidad($cotizacion );
     }
 
 
 
-    private function disponibilidad($origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha,$servicePacking){
-        require_once(Yii::getAlias('@app') . '/_360Utils/shipment-carriers/fedex/fedex-common.php');
-            $path_to_wsdl = Yii::getAlias('@app') . '/_360Utils/shipment-carriers/fedex/wsdl/ValidationAvailabilityAndCommitmentService_v8.wsdl';
+    /**
+     * Verifica los diferentes metodos de envio disponibles
+     */
+    private function disponibilidad(CotizacionRequest $cotizacion){
+        //$origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha,$servicePacking
+        require_once(Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/fedex-common.php');
+            $path_to_wsdl = Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/wsdl/ValidationAvailabilityAndCommitmentService_v8.wsdl';
             ini_set("soap.wsdl_cache_enabled", "0");
 
             $client = new \SoapClient($path_to_wsdl, array('trace' => 1));
@@ -52,17 +59,17 @@ class FedexServices{
                 'Minor' => '0'
             );
             $request['Origin'] = array(
-                'PostalCode' => $origenCP, // Origin details
-                'CountryCode' => $origenCountry
+                'PostalCode' => $cotizacion->origenCP, // Origin details
+                'CountryCode' => $cotizacion->origenCountry
             );
             $request['Destination'] = array(
-                'PostalCode' => $destinoCP, // Destination details
-                'CountryCode' => $destinoCountry
+                'PostalCode' => $cotizacion->destinoCP, // Destination details
+                'CountryCode' => $cotizacion->destinoCountry
             );
-            $request['ShipDate'] = $fecha;
+            $request['ShipDate'] = $cotizacion->fecha;
             $request['CarrierCode'] = 'FDXE'; // valid codes FDXE-Express, FDXG-Ground, FDXC-Cargo, FXCC-Custom Critical and FXFR-Freight
             //$request['Service'] = 'PRIORITY_OVERNIGHT'; // valid code STANDARD_OVERNIGHT, PRIORITY_OVERNIGHT, FEDEX_GROUND, ...
-            $request['Packaging'] = $servicePacking;//$json->service_packing; // valid code FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
+            $request['Packaging'] = $cotizacion->packingType;//$json->service_packing; // valid code FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
 
 
             try {
@@ -86,35 +93,32 @@ class FedexServices{
     }
 
 
-    function cotizarEnvioDocumento($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, $paquetes, $montoSeguro = false){
+    function cotizarEnvioDocumento($serviceType, CotizacionRequest $cotizacion){
         //Cotiza un envio de documento
-        return $this->cotizarEnvio($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, 'FEDEX_ENVELOPE', $paquetes, $montoSeguro );
+        $cotizacion->packingType = 'FEDEX_ENVELOPE';
+        return $this->_cotizarEnvio($serviceType, $cotizacion );
     }
 
-    function cotizarEnvioPaquete($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, $paquetes, $montoSeguro = false){
+    function cotizarEnvioPaquete($serviceType, CotizacionRequest $cotizacion){
         //Cotiza un envio de documento
-        return $this->cotizarEnvio($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, 'YOUR_PACKAGING', $paquetes, $montoSeguro );
+        $cotizacion->packingType = 'YOUR_PACKAGING';
+        return $this->_cotizarEnvio($serviceType, $cotizacion );
     }
 
 
 
-    private function cotizarEnvio($serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, $servicePacking, $paquetes, $montoSeguro = false){
+    private function _cotizarEnvio($serviceType, CotizacionRequest $cotizacion){
+        //$serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, $servicePacking, $paquetes, $montoSeguro = false
 
         $preferedCurrency = 'MXN';
         $pickUp = 'REGULAR_PICKUP';
 
         //manejar varios paquetes
-        $numeroPaquetes = count($paquetes);
-        //$largo = $paquetes[0]['num_largo'];
-        //$ancho = $paquetes[0]['num_largo'];
-        //$alto = $paquetes[0]['num_largo'];
-        //$peso = $paquetes[0]['num_peso'];
+        $numeroPaquetes = $cotizacion->paquetesCount();
         
-       
-    
 
-        require_once(Yii::getAlias('@app') . '/_360Utils/shipment-carriers/fedex/fedex-common.php');
-        $path_to_wsdl = Yii::getAlias('@app') . '/_360Utils/shipment-carriers/fedex/wsdl/RateService_v22.wsdl';
+        require_once(Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/fedex-common.php');
+        $path_to_wsdl = Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/wsdl/RateService_v22.wsdl';
         ini_set("soap.wsdl_cache_enabled", "0");
 
         $client = new \SoapClient($path_to_wsdl, array('trace' => 1));
@@ -130,33 +134,33 @@ class FedexServices{
 
         $request['ReturnTransitAndCommit']                  = true;
         $request['RequestedShipment']['DropoffType']        = $pickUp; // valid values REGULAR_PICKUP, REQUEST_COURIER, ...
-        $request['RequestedShipment']['ShipTimestamp']      = $fecha;
+        $request['RequestedShipment']['ShipTimestamp']      = date('c');//$cotizacion->fecha;
         $request['RequestedShipment']['ServiceType']        = $serviceType; // valid values STANDARD_OVERNIGHT, PRIORITY_OVERNIGHT, FEDEX_GROUND, ...
-        $request['RequestedShipment']['PackagingType']      = $servicePacking; // valid values FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
+        $request['RequestedShipment']['PackagingType']      = $cotizacion->packingType; // valid values FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
         $request['RequestedShipment']['PreferredCurrency']  = $preferedCurrency;
         $request['RequestedShipment']['RateRequestTypes']   = 'PREFERRED';        
 
         
-        if($montoSeguro){
+        if($cotizacion->hasSeguro){
             $request['RequestedShipment']['TotalInsuredValue']=array(
-                'Ammount'=>$montoSeguro,
+                'Ammount'=>$cotizacion->montoSeguro,
                 'Currency'=>$preferedCurrency
             );
         }
         
 
-        $request['RequestedShipment']['Shipper']    = $this->addShipper($origenCP, $origenCountry);
-        $request['RequestedShipment']['Recipient']  = $this->addRecipient($destinoCP, $destinoCountry);
+        $request['RequestedShipment']['Shipper']    = $this->addShipper($cotizacion->origenCP, $cotizacion->origenCountry);
+        $request['RequestedShipment']['Recipient']  = $this->addRecipient($cotizacion->destinoCP, $cotizacion->destinoCountry);
         //$request['RequestedShipment']['ShippingChargesPayment'] = $this->addShippingChargesPayment();
         $request['RequestedShipment']['PackageCount'] = $numeroPaquetes;
         $request['RequestedShipment']['RequestedPackageLineItems'] = [];
         
         //Agrega los paquetes
-        foreach($paquetes as $item){
-            $largo = $item['num_largo'];
-            $ancho = $item['num_largo'];
-            $alto = $item['num_largo'];
-            $peso = $item['num_peso'];
+        foreach($cotizacion->paquetes as $item){
+            $largo = $item->largo;
+            $ancho = $item->ancho;
+            $alto = $item->alto;
+            $peso = $item->peso;
             $pkg = $this->addPackageLineItem($peso, $largo, $ancho, $alto);
             array_push($request['RequestedShipment']['RequestedPackageLineItems'], $pkg);
         }
@@ -199,7 +203,7 @@ class FedexServices{
                
                 //Fecha de entrega
                 if(array_key_exists('DeliveryTimestamp',$rateReply)){
-                    $deliveryDate=  $rateReply->DeliveryTimestamp ;
+                    $deliveryDate =  $rateReply->DeliveryTimestamp ;
                 }else if(array_key_exists('TransitTime',$rateReply)){
                     $deliveryDate=  $rateReply->TransitTime ;
                 }else {
@@ -282,7 +286,7 @@ class FedexServices{
      * Metodo para comprar envios
      */
     private function comprarEnvio(CompraEnvio $model, $servicePacking){
-        require_once(Yii::getAlias('@app') . '/_360Utils/shipment-carriers/fedex/fedex-common.php');
+        require_once(Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/fedex-common.php');
 
         $preferedCurrency = 'MXN';
         $pickUp = 'REGULAR_PICKUP';
@@ -401,7 +405,7 @@ class FedexServices{
     private function realizaEnvioCompra($model,$request,$servicePacking){
 
         
-        $path_to_wsdl = Yii::getAlias('@app') . '/_360Utils/shipment-carriers/fedex/wsdl/ShipService_v21.wsdl';
+        $path_to_wsdl = Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/wsdl/ShipService_v21.wsdl';
         ini_set("soap.wsdl_cache_enabled", "0");
 
         $client = new \SoapClient($path_to_wsdl, array('trace' => 1));

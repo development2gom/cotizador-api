@@ -9,6 +9,9 @@ use app\_360Utils\Entity\Cotizacion;
 use app\_360Utils\Entity\CompraEnvio;
 use app\_360Utils\Entity\ResultadoEnvio;
 use app\_360Utils\Entity\CotizacionRequest;
+use app\_360Utils\Entity\TrackingResult;
+use yii\base\ExitException;
+
 
 class FedexServices{
 
@@ -22,8 +25,89 @@ class FedexServices{
 	const FEDEX_LOCATION_ID     = 'PLBA';
 	const FEDEX_METER           = '119037066';
 
+    const FEDEX_CUSTOMER_REF    = '794653027330';
 
 
+    //------------- TRAKING -------------------------
+
+    function traking($trakingNumber){
+        require_once(Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/fedex-common.php');
+        $path_to_wsdl = Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/wsdl/TrackService_v16.wsdl';
+        ini_set("soap.wsdl_cache_enabled", "0");
+
+
+        $client = new \SoapClient($path_to_wsdl, array('trace' => 1)); // Refer to http://us3.php.net/manual/en/ref.soap.php for more information
+
+        
+        $request = $this->configClientRequest();
+
+        $request['TransactionDetail'] = array('CustomerTransactionId' => '*** Track Request using PHP ***');
+        $request['Version'] = array(
+	        'ServiceId' => 'trck', 
+	        'Major' => '16', 
+	        'Intermediate' => '0', 
+	        'Minor' => '0'
+        );
+
+        $request['SelectionDetails'] = array(
+	        'PackageIdentifier' => array(
+		    'Type' => 'CUSTOMER_REFERENCE',
+		    'Value' => $trakingNumber // Replace with a valid customer reference
+	        ),
+            //'ShipDateRangeBegin' => getProperty('begindate'),
+            //'ShipDateRangeEnd' => getProperty('enddate'),
+            'ShipmentAccountNumber' => self::FEDEX_SHIP_ACCOUNT // Replace with account used for shipment
+        );
+
+        try {
+            if(setEndpoint('changeEndpoint')){
+                $newLocation = $client->__setLocation(setEndpoint('endpoint'));
+            }
+            
+            $response = $client ->track($request);
+            $res = new TrackingResult();
+            $res->data = $response;
+                
+            //No hay error
+            if ($response -> HighestSeverity != 'FAILURE' && $response -> HighestSeverity != 'ERROR'){ 
+                $res->isError = false;
+                $res->message = $response-> CompletedTrackDetails-> TrackDetails-> Notification->Message;  
+                
+                //Se encontro el traking
+                if($response-> CompletedTrackDetails-> TrackDetails-> Notification-> Severity != "ERROR"){
+                    $res->isTrakingFound  = true;
+                    $res->numeroPaquetes  =  $response->CompletedTrackDetails->TrackDetails->PackageCount;
+                    $res->intentosEntrega =  $response->CompletedTrackDetails->TrackDetails->DeliveryAttempts;
+                }
+
+
+            }else{
+                $res->isError = true;
+                $res->message = $response->Notifications->Message; 
+            } 
+
+
+            return $res;
+            
+        } catch (SoapFault $exception) {
+            //printFault($exception, $client);        
+            $res = new TrackingResult();
+            $res->isError = true;
+            $res->message = "Error con el servicio";
+            return $res;
+        }
+        catch (\Exception $exception) {
+            //printFault($exception, $client);        
+            $res = new TrackingResult();
+            $res->isError = true;
+            $res->message = "Error con el servicio, " . $exception->getMessage();
+            return $res;
+        }
+
+        
+    }
+
+    //------------- ENVIOS --------------------------
     function disponibilidadDocumento(CotizacionRequest $cotizacion){
         //Corresponde a un documento
         $cotizacion->packingType = 'FEDEX_ENVELOPE';
@@ -43,7 +127,6 @@ class FedexServices{
      * Verifica los diferentes metodos de envio disponibles
      */
     private function disponibilidad(CotizacionRequest $cotizacion){
-        //$origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha,$servicePacking
         require_once(Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/fedex-common.php');
             $path_to_wsdl = Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/wsdl/ValidationAvailabilityAndCommitmentService_v8.wsdl';
             ini_set("soap.wsdl_cache_enabled", "0");
@@ -425,22 +508,13 @@ class FedexServices{
                 $data['master_tracking_id'] = $response->CompletedShipmentDetail->MasterTrackingId;
                 $data['label_pdf'] = base64_encode($response->CompletedShipmentDetail->CompletedPackageDetails->Label->Parts->Image);
 
-                //return $data;
-                //return $response;      
-                
-                
-                $data = [];
-                $data['notifications'] = $response->Notifications;
-                $data['job_id']= $response->JobId;
-                $data['master_tracking_id'] = $response->CompletedShipmentDetail->MasterTrackingId;
-                $data['label_pdf'] = base64_encode($response->CompletedShipmentDetail->CompletedPackageDetails->Label->Parts->Image);
-
 
                 $res = new ResultadoEnvio();
 
                 $res->data          = json_encode($response);
                 $res->jobId         = $data['job_id'];
                 $res->envioCode     = $data['master_tracking_id']->TrackingNumber;
+                $res->trakingNumber = $data['master_tracking_id']->TrackingNumber;
                 $res->envioCode2    = $data['master_tracking_id']->FormId;
                 $res->tipoEmpaque   = $servicePacking;
                 $res->tipoServicio  = $model->tipo_servicio;

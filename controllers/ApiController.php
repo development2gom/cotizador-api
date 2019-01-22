@@ -25,7 +25,7 @@ use app\models\EntFacturacion;
 use app\models\WrkEnvios;
 use app\models\ResponseServices;
 use app\models\OpenPay;
-use app\models\EntOrdenesCompras;
+use app\models\EntOrdeness;
 use app\models\Pagos;
 use app\models\RelEnvioExtras;
 use app\config\ServicesApiConfig;
@@ -772,6 +772,9 @@ class ApiController extends Controller
     }
 
 
+    /**
+     * Funcion 
+     */
     public function actionGenerarFactura2(){
         $request = Yii::$app->request;
         $uddiEnvio = $request->getBodyParam('uddi_envio');
@@ -838,83 +841,7 @@ class ApiController extends Controller
         
     }
 
-    /**
-     * Depreciada
-     *//*
-    public function actionGenerarFactura(){
-        $request = Yii::$app->request;//print_r($request->getBodyParam('transacciones'));exit;
-
-		$error = new MessageResponse();
-        $error->responseCode = -1;
-		$botones = "";
-
-        if(empty($request->getBodyParam('transacciones'))){
-            $error->message = 'Body de la petición faltante';
-
-            return $error;
-        }
-
-        // Datos de facturación
-        if(empty($request->getBodyParam('uddi_cliente'))){
-            $error->message = 'Body de la petición faltante';
-
-            return $error;
-        }
-
-        $botonesArray = [];
-        $i = 0;
-        $transaccionesArray = $request->getBodyParam('transacciones');
-        foreach($transaccionesArray as $transaccion){
-            $i++;
-            $ordenPagada = EntPagosRecibidos::find()->where(["txt_transaccion"=>$transaccion])->one();
-            $botones = '<a class="btn donaciones-facturar-pdf js-descargar-pdf" target="_blank" href='.Url::base().'/api/descargar-factura-pdf?token='.$transaccion.'>PDF</a> 
-            <a href='.Url::base().'/api/descargar-factura-xml?token='.$transaccion.' target="_blank" class="btn donaciones-facturar-xml js-descargar-xml">XML</a>';
-
-            if(!$ordenPagada){
-                $botonesArray[$i] = null;continue;
-            }
-
-            if($ordenPagada->b_facturado){
-                $botonesArray[$i] = $ordenPagada;continue;
-            }
-
-            $uddi_cliente = $request->getBodyParam('uddi_cliente');
-            $id_factura = 0;
-            if($request->getBodyParam('id_factura')){
-                $id_factura = $request->getBodyParam('id_factura');
-            }
-            $cliente = EntClientes::getClienteByUddi($uddi_cliente);
-
-            $facturacion = EntFacturacion::getFacturaByIdCliente($id_factura, $cliente->id_cliente);
-            
-            $factura = new Pagos();
-            $facturaGenerar = $factura->generarFactura($facturacion, $ordenPagada);
-            
-            if(isset($facturaGenerar->pdf) && isset($facturaGenerar->xml)){
-                
-                $this->validarDirectorio("facturas/".$cliente->uddi);
-                $this->validarDirectorio("facturas/".$cliente->uddi."/".$transaccion);
-
-                $pdf = base64_decode($facturaGenerar->pdf);
-
-                $xml = base64_decode($facturaGenerar->xml);
-
-                file_put_contents("facturas/".$cliente->uddi."/".$transaccion."/factura.pdf", $pdf);
-                file_put_contents("facturas/".$cliente->uddi."/".$transaccion."/factura.xml", $xml);
-
-                $ordenPagada->b_facturado = 1;
-                $ordenPagada->save();
-                
-                $botonesArray[$i] = $ordenPagada;continue;
-            }
-
-            if(isset($facturaGenerar->error) && $facturaGenerar->error){
-                $botonesArray[$i] = null;continue;
-            }
-        }
-
-        return $botonesArray;
-    }*/
+    
     
     public function validarDirectorio($path){
 		if(!file_exists($path)){

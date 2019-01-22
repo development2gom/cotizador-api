@@ -10,6 +10,8 @@ use app\_360Utils\Entity\CompraEnvio;
 use app\_360Utils\Entity\ResultadoEnvio;
 use app\_360Utils\Entity\CotizacionRequest;
 use app\_360Utils\Entity\Paquete;
+use app\_360Utils\Entity\TrackingResult;
+use app\_360Utils\Entity\Evento;
 
 class UpsServices{
 
@@ -90,12 +92,191 @@ class UpsServices{
     const UOM_IN = 'IN'; // Inches
     const UOM_CM = 'CM'; // Centimeters
 
-    const URL_DEV  = 'https://wwwcie.ups.com/rest/';
-    const URL_PROD = 'https://onlinetools.ups.com/rest/';
+    const URL_DEV       = 'https://wwwcie.ups.com/rest/';
+    const URL_PROD      = 'https://onlinetools.ups.com/rest/';
+    var $URL_SERVICE    = 'https://wwwcie.ups.com/rest/';
+    var $URL_WEB_SERVICE    = 'https://wwwcie.ups.com/webservices/';
 
-    var $URL_SERVICE = 'https://wwwcie.ups.com/rest/';
+
+    //-------------- TRAKING -----------------
 
 
+    
+
+    function traking($trakingNumber){
+
+        $path_to_wsdl = Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/ups/wsdl/Track.wsdl';
+        try
+        {
+            //Obtiene los datos del request
+            $requestData = $this->getTrakingRequest($trakingNumber);
+
+            // initialize soap client
+            $client = new \SoapClient($path_to_wsdl, array('trace' => 1)); 
+            $endpointurl = $this->URL_WEB_SERVICE . 'Track';
+             
+            
+            $soapHeader = new \SoapHeader('http://www.ups.com/XMLSchema/XOLTWS/UPSS/v1.0','UPSSecurity',$requestData['header']);
+            $client->__setSoapHeaders($soapHeader);
+            $client->__setLocation($endpointurl);
+            $resp = $client->__soapCall("ProcessTrack" , array($requestData['body']) );
+
+            //------------ PROCESA LA RESPUESTA DEL SERVICIO ------------------
+
+            $res = new TrackingResult();
+            $res->data = json_encode($resp);
+
+
+            //Verifica si hay error en la respuesta
+            if($resp->Response->ResponseStatus->Code != 1){
+                $res->isError = true;
+                $res->message = $response->Notifications->Message; 
+                return $res;
+            }
+
+
+            //Verifica si existe la entrada de Pakage
+            if(isset($resp->Shipment->Package)){
+                $activities = $resp->Shipment->Package->Activity;
+            }else{
+                $activities = $resp->Shipment->Activity;
+            }
+
+            
+            
+            //Si hay más de un elemento Activity
+            if(is_array( $activities )){
+
+                //Agrega los eventos a la respuesta
+                foreach($activities as $item){
+                    $ev = new Evento();
+                    $ev->date = $item->Date . " " . $item->Time;
+                    if(isset($item->Status)){
+                        $ev->description = $item->Status->Description;
+                    }else{
+                        $ev->description = $item->Description;
+                    }
+                    $res->addEvento($ev);
+                }
+
+                //Toma la ultima actividad
+                $activity = $this->getLastActivity($activities);
+                
+            }else{
+                $activity = $activities;
+            }
+            
+            
+            $res->isError = false;
+            $res->isTrakingFound  = true;
+            if(isset($activity->Status)){
+                $res->isDelivered = $activity->Status->Description == "DELIVERED";
+                $res->message = $activity->Status->Description;
+            }else{
+                $res->isDelivered = $activity->Description == "DELIVERED";
+                $res->message = $activity->Description;
+            }
+            
+            $res->dateLastRecord = $activity->Date . " " . $activity->Time;
+            
+
+            //En caso que se cuente con un documento de firma
+            if(isset($activity->Document)){
+                $res->documentDesc = $activity->Document->Type->Description;
+                $res->document = $activity->Document->Content;
+                $res->documentFormat = $activity->Document->Format->Description;
+            }
+            
+
+            return $res;
+        }
+        catch(\SoapFault $se){
+            $xml = $client->__getLastRequest();
+            $res = new TrackingResult();
+            $res->isError = true;
+            $res->message = $se->detail->Errors->ErrorDetail->PrimaryErrorCode->Description;
+            return $res;
+        }
+        catch(\Exception $ex)
+        {
+            $xml = $client->__getLastRequest();
+            $res = new TrackingResult();
+            $res->isError = true;
+            $res->message = "Error con el servicio " . $ex->getMessage();
+            return $res;
+        }
+       
+    }
+
+    /*
+    // ----------- TRAKING NUMBERS DE PRUEBA -----------
+       TRACKING NUMBER, SERVICE, RESPONSE
+        1Z12345E0205271688 (Signature Availability), 2nd Day Air, Delivered
+        1Z12345E6605272234, World Wide Express, Delivered
+        1Z12345E0305271640, (Second Package: 1Z12345E0393657226), Ground, Delivered
+        1Z12345E1305277940, Next Day Air Saver, ORIGIN SCAN
+        1Z12345E6205277936, Day Air Saver, 2nd Delivery attempt
+        1Z12345E020527079, Invalid Tracking Number               
+        1Z12345E1505270452, No Tracking Information Available
+        990728071, UPS Freight LTL, In Transit
+        3251026119, Delivered Origin CFS
+        MI Tracking Number: 9102084383041101186729
+        MI Reference Number: cgish000116630
+        1Z648616E192760718, UPS Worldwide Express Freight, Order Process by UPS
+        5548789114, UPS Express Freight, Response for UPS Air Freight
+        ER751105042015062, UPS Ocean, Response for UPS Ocean Freight
+        1ZWX0692YP40636269, UPS SUREPOST, Response for UPS SUREPOST
+        */
+
+        private function getTrakingRequest($trakingNumber){
+       
+            $header = [];
+            $header['UsernameToken'] = [];
+            $header['UsernameToken']['Username'] = self::UPS_USER_NAME;
+            $header['UsernameToken']['Password'] = self::UPS_PASSWORD;
+            $header['ServiceAccessToken'] = [];
+            $header['ServiceAccessToken']['AccessLicenseNumber'] = self::UPS_LICENCE_NUMBER;
+    
+            $request = [];
+            $request['Request'] = [];
+            $request['Request']['RequestOption'] = "15";
+            $request['Request']['TransactionReference'] = [];
+            $request['Request']['TransactionReference']['CustomerContext'] = "Envios 360";
+            
+            
+            $request['InquiryNumber'] = $trakingNumber;
+            //$request['InquiryNumber'] = '1Z12345E0205271688';
+            $request['TrackingOption'] = "02";
+    
+            $data = [];
+            $data['header'] = $header;
+            $data['body']   = $request;
+    
+            return $data;
+    
+        }
+
+
+    /**
+     * Permite encontrar el ultimo evento en una cadena de actividades
+     */
+    private function getLastActivity($list){
+
+        $lastDate = -1;
+        $lastItem = null;
+        foreach($list as $item){
+            $dt = (int)($item->Date . $item->Time);
+            if($dt > $lastDate){
+                $lastDate = $dt;
+                $lastItem = $item;
+            }
+        }
+
+        return $lastItem;
+    }
+
+
+    //------------- COTIZACION ---------------
     function cotizarEnvioDocumento($cp_origen,$stado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $paquetes){
         $servicios = [self::S_AIR_1DAY,self::S_AIR_2DAY,self::S_GROUND];
         $responses = [];

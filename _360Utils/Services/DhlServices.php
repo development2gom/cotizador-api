@@ -10,6 +10,8 @@ use app\_360Utils\Entity\ResultadoEnvio;
 use app\_360Utils\shipmentCarriers\dhl\entity\Quote;
 use app\_360Utils\shipmentCarriers\dhl\entity\PieceType;
 use app\_360Utils\Entity\CotizacionRequest;
+use app\_360Utils\Entity\TrackingResult;
+use app\_360Utils\Entity\Evento;
 
 class DhlServices{
 
@@ -25,12 +27,95 @@ class DhlServices{
     const DHL_SHIPPER_ID = "751008818";
     const DHL_REGISTER_ACCOUNT = "751008818";
 
-    const DHL_WS_DCT_REQUEST = ' xmlns:p="http://www.dhl.com" xmlns:p1="http://www.dhl.com/datatypes" xmlns:p2="http://www.dhl.com/DCTRequestdatatypes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com DCT-req.xsd">';
-    const DHL_WS_SHIPMENT_REQUEST = 'xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="5.0" xsi:schemaLocation="http://www.dhl.com ship-val-global-req.xsd">';
+    //Tipos de servicios
+    const IS_COTIZACION = 1;
+    const IS_SHIPMENT = 2;
+    const IS_TRAKING = 3;
+
+    //Encabezados del Web Service
+    const DHL_WS_DCT_REQUEST        = ' xmlns:p="http://www.dhl.com" xmlns:p1="http://www.dhl.com/datatypes" xmlns:p2="http://www.dhl.com/DCTRequestdatatypes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com DCT-req.xsd">';
+    const DHL_WS_SHIPMENT_REQUEST   = ' xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="5.0" xsi:schemaLocation="http://www.dhl.com ship-val-global-req.xsd">';
+    const DHL_WS_TRAKING_REQUEST    = ' xmlns:req="http://www.dhl.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dhl.com TrackingRequestKnown.xsd">';
 
 
     
+    //------------- TRACKING DE ENVIOS ---------------------------
 
+    function traking($trakingNumber){
+        $request = $this->createTrakingRequest($trakingNumber);
+        $res = $this->callWebService($request, self::IS_TRAKING);
+        $xml = simplexml_load_string($res);
+        $json = json_encode($xml);
+        $array = json_decode($json,TRUE);
+
+
+        //---- RESPUESTA ------
+
+        $resTraking = new TrackingResult();
+        $resTraking->data = $json;
+
+        //Error en el request
+        if(isset($array['Response']) && isset($array['Response']['Status'])){
+            $resTraking->message = $array['Response']['Status']['ActionStatus'];
+            $resTraking->isError = true;
+
+            return $resTraking;
+        }else  // ERROR en el tracking
+        if(isset($array['AWBInfo']) && isset($array['AWBInfo']['Status'])){
+            $resTraking->message = $array['AWBInfo']['Status']['ActionStatus'];
+            $resTraking->isError = true;
+
+            return $resTraking;
+        }
+
+        
+
+        $resTraking->isTrakingFound = true;
+
+        foreach($array['AWBInfo'] as $item){
+            if(!isset($item['ShipmentInfo']['ShipmentEvent'])){
+                continue;
+            }
+            $info = $item['ShipmentInfo']['ShipmentEvent'];
+            $evt = new Evento();
+            $evt->description = $info['ServiceEvent']['Description'];
+            $evt->date = $info['Date'] . " " .  $info['Time'];
+
+            $resTraking->addEvento($evt);
+
+            $resTraking->isDelivered = false;
+            
+            $resTraking->message = $evt->description;
+            $resTraking->fch_ultimo_estatus = $info['Date'] . " " .  $info['Time'];
+
+        }
+
+        return $resTraking;
+
+    }
+
+    
+
+
+    private function createTrakingRequest($tn){
+       
+        $request = [];
+        $request['Request']['ServiceHeader'] = [];
+        $request['Request']['ServiceHeader']['MessageTime'] = date('Y-m-dTH:i:s.uZ');
+        $request['Request']['ServiceHeader']['MessageReference'] = uniqid('123456789012345'); //;'1234567890123456789012345678901';
+        $request['Request']['ServiceHeader']['SiteID'] = self::DHL_SITE_ID;
+        $request['Request']['ServiceHeader']['Password'] = self::DHL_PASSWORD;
+
+        $request['LanguageCode'] = "es";
+        //$request['AWBNumber'] = $tn;
+        $request['AWBNumber'] = "8564385550";
+        $request['LevelOfDetails'] = "ALL_CHECK_POINTS"; //"LAST_CHECK_POINT_ONLY";
+        $request['PiecesEnabled'] = "S";
+
+        return $request;
+    }
+
+    //------------- COTIZACION DE ENVIOS -------------------------
 
     function cotizarEnvioDocumento(CotizacionRequest $cotiacion){
         return $this->_cotizarEnvioInterno($cotizacion);
@@ -60,7 +145,7 @@ class DhlServices{
     private function _comprarEnvioInterno(CompraEnvio $model, $isPaquete){
         
         $request = $this->createShipmentRequest($model,$isPaquete);
-        $res = $this->callWebService($request, false);
+        $res = $this->callWebService($request, self::IS_SHIPMENT);
         $xml = simplexml_load_string($res);
         $json = json_encode($xml);
         $array = json_decode($json,TRUE);
@@ -97,7 +182,7 @@ class DhlServices{
     private function createShipmentRequest(CompraEnvio $model, $isPaquete){
         $request = [];
         $request['Request']['ServiceHeader'] = [];
-        $request['Request']['ServiceHeader']['MessageTime'] = '2019-01-10T11:28:56.000-08:00';
+        $request['Request']['ServiceHeader']['MessageTime'] = date('Y-m-dTH:i:s.uZ');//'2019-01-10T11:28:56.000-08:00';
         $request['Request']['ServiceHeader']['MessageReference'] = '1234567890123456789012345678901';
         $request['Request']['ServiceHeader']['SiteID'] = self::DHL_SITE_ID;
         $request['Request']['ServiceHeader']['Password'] = self::DHL_PASSWORD;
@@ -231,7 +316,7 @@ class DhlServices{
         
         $request = $this->getCotizarRequest($cotizacion);
         
-        $res = $this->callWebService($request, true);
+        $res = $this->callWebService($request, self::IS_COTIZACION);
         $xml = simplexml_load_string($res);
         $json = json_encode($xml);
         $array = json_decode($json,TRUE);
@@ -284,7 +369,7 @@ class DhlServices{
         $request['GetQuote']['Request'] = [];
 
         $request['GetQuote']['Request']['ServiceHeader'] = [];
-        $request['GetQuote']['Request']['ServiceHeader']['MessageTime'] = '2019-01-10T11:28:56.000-08:00';
+        $request['GetQuote']['Request']['ServiceHeader']['MessageTime'] = date('Y-m-dTH:i:s.uZ');//'2019-01-10T11:28:56.000-08:00';
         $request['GetQuote']['Request']['ServiceHeader']['MessageReference'] = '1234567890123456789012345678901';
         $request['GetQuote']['Request']['ServiceHeader']['SiteID'] = self::DHL_SITE_ID;
         $request['GetQuote']['Request']['ServiceHeader']['Password'] = self::DHL_PASSWORD;
@@ -393,17 +478,28 @@ class DhlServices{
         return $res;
     }
 
-    public function callWebService($request, $isCotizacion){
+
+   
+
+
+    public function callWebService($request,  $requestType){
         if (!$ch = curl_init())
         {
             throw new \Exception('could not initialize curl');
         }
 
-        if($isCotizacion){
-            $xml = $this->generateValidXmlFromArray($request,'p:DCTRequest');
-        }else{
-            $xml = $this->generateValidXmlFromArray($request,'req:ShipmentRequest');
+        switch($requestType){
+            case self::IS_COTIZACION:
+                $xml = $this->generateValidXmlFromArray($request,'p:DCTRequest',null, $requestType);
+                break;
+            case self::IS_SHIPMENT:
+                $xml = $this->generateValidXmlFromArray($request,'req:ShipmentRequest', $requestType);
+                break;
+            case self::IS_TRAKING:
+                $xml = $this->generateValidXmlFromArray($request,'req:KnownTrackingRequest',null, $requestType);
+                break;
         }
+        
 
         $xml = str_replace("<node>" ,"",$xml);
         $xml = str_replace("</node>" ,"",$xml);
@@ -442,15 +538,25 @@ class DhlServices{
     /**
      * Genera el XML a partir del arreglo
      */
-    public static function generateValidXmlFromArray($array, $node_block='nodes', $node_name='node') {
+    public static function generateValidXmlFromArray($array, $node_block='nodes', $node_name='node',$requestType) {
         $xml = '<?xml version="1.0" encoding="UTF-8" ?>';
 
         $xml .= '<' . $node_block . ' ';
-        if($node_block == "p:DCTRequest"){
-            $xml .= self::DHL_WS_DCT_REQUEST;
-        }else{
-            $xml .= self::DHL_WS_SHIPMENT_REQUEST;
+
+        switch($requestType){
+            case self::IS_COTIZACION:
+                $xml .= self::DHL_WS_DCT_REQUEST;
+                break;
+            case self::IS_SHIPMENT:
+                $xml .= self::DHL_WS_SHIPMENT_REQUEST;  
+                break;
+            case self::IS_TRAKING:
+                $xml .= self::DHL_WS_TRAKING_REQUEST;
+                break;
         }
+
+
+        
         $xml .= self::generateXmlFromArray($array, $node_name);
         $xml .= '</' . $node_block . '>';
 

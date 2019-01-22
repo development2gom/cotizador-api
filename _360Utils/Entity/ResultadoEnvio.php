@@ -6,6 +6,7 @@ namespace app\_360Utils\Entity;
 
 
 class ResultadoEnvio{
+    var $trakingNumber;
     var $jobId;
     var $envioCode;
     var $envioCode2;

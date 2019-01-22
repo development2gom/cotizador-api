@@ -27,6 +27,7 @@ use app\_360Utils\CompraPaquete;
 use app\models\WrkResultadosEnvios;
 use app\_360Utils\CompraSobre;
 use app\_360Utils\Entity\CotizacionRequest;
+use app\_360Utils\Tracking;
 
 
 class EnviosController extends Controller{
@@ -112,6 +113,40 @@ class EnviosController extends Controller{
         return $data;
     }
 
+
+    // Recupera todos los envios
+    public function actionGetEnviosMostrador(){
+        $envios = new WrkEnviosSearch();
+        $data = $envios->searchMostrador([]);
+
+        return $data;
+    }
+
+
+    /**
+     * Realiza el tracking de un envio
+     */
+    public function actionTrackEnvio(){
+        $request = Yii::$app->request;
+        $params = $request->bodyParams;
+        $uddi = $request->getBodyParam("uddi_envio_respuesta");
+
+        $res = WrkResultadosEnvios::find()->where(['uddi'=>$uddi])->one();
+        $carrier = $res->envio->proveedor->txt_nombre_proveedor;
+
+        $track = new Tracking();
+        $trackRes = $track->doTracking($carrier,$uddi);
+        
+        if($res){
+            $res->fch_ultimo_estatus = Calendario::getFechaActual();
+            $res->txt_ultimo_estatus = $trackRes->message;
+            if($trackRes->isDelivered){
+                $res->b_entregado = 1;
+            }
+            $res->update();
+        }
+        return $trackRes;
+    }
     
 
     public function actionUpdateEnvio(){

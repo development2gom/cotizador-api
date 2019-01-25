@@ -35,6 +35,9 @@ function getCPData($cp, $country){
 
         foreach($responseData['postalCodes'] as $item){
             $cp = new CPInfo();
+            if(!isset($item['adminName2'])){
+                continue;
+            }
             //$cp->neighborhood = $item['adminName3'];
             $cp->city = $item['adminName2'];
             $cp->country_code = $item['countryCode'];

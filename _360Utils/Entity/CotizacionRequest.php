@@ -15,14 +15,17 @@ class CotizacionRequest{
     public $destinoCountry;
     public $destinoStateCode;
 
+    //Fecha en la que se planea hacer el envío o la recoleccion
     public $fecha;
+
+    
 
     public $paquetes = [];
     public $isPaquete;
     public $valorDeclarado = 0.00;
 
-    public $hasSeguro = false;
-    public $montoSeguro = 0.00;
+    public $hasSeguro = false; //Si tiene o no seguro
+    public $montoSeguro = 0.00; //Monto del seguro del envio
 
     public $packingType;
 

@@ -108,17 +108,17 @@ class FedexServices{
     }
 
     //------------- ENVIOS --------------------------
-    function disponibilidadDocumento(CotizacionRequest $cotizacion){
+    function disponibilidadDocumento(CotizacionRequest $cotizacion, $fecha){
         //Corresponde a un documento
         $cotizacion->packingType = 'FEDEX_ENVELOPE';
-        return $this->disponibilidad($origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha );
+        return $this->disponibilidad($cotizacion,$fecha );
     }
 
 
-    function disponibilidadPaquete(CotizacionRequest $cotizacion){
+    function disponibilidadPaquete(CotizacionRequest $cotizacion,$fecha){
         //Corresponde a un paquete
         $cotizacion->packingType = 'YOUR_PACKAGING';
-        return $this->disponibilidad($cotizacion );
+        return $this->disponibilidad($cotizacion ,$fecha);
     }
 
 
@@ -126,7 +126,7 @@ class FedexServices{
     /**
      * Verifica los diferentes metodos de envio disponibles
      */
-    private function disponibilidad(CotizacionRequest $cotizacion){
+    private function disponibilidad(CotizacionRequest $cotizacion, $fecha){
         require_once(Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/fedex-common.php');
             $path_to_wsdl = Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/wsdl/ValidationAvailabilityAndCommitmentService_v8.wsdl';
             ini_set("soap.wsdl_cache_enabled", "0");
@@ -149,7 +149,8 @@ class FedexServices{
                 'PostalCode' => $cotizacion->destinoCP, // Destination details
                 'CountryCode' => $cotizacion->destinoCountry
             );
-            $request['ShipDate'] = $cotizacion->fecha;
+            //$request['ShipDate'] = $cotizacion->fecha;
+            $request['ShipDate'] = $fecha;
             $request['CarrierCode'] = 'FDXE'; // valid codes FDXE-Express, FDXG-Ground, FDXC-Cargo, FXCC-Custom Critical and FXFR-Freight
             //$request['Service'] = 'PRIORITY_OVERNIGHT'; // valid code STANDARD_OVERNIGHT, PRIORITY_OVERNIGHT, FEDEX_GROUND, ...
             $request['Packaging'] = $cotizacion->packingType;//$json->service_packing; // valid code FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
@@ -170,27 +171,29 @@ class FedexServices{
                     return false;
                 } 
                 
-            } catch (SoapFault $exception) {
-            printFault($exception, $client);        
+            } catch (\SoapFault $exception) {
+                printFault($exception, $client); 
+                error_log($client->__getLastRequest());       
+                error_log($client->__getLastResponse());  
             }
     }
 
 
-    function cotizarEnvioDocumento($serviceType, CotizacionRequest $cotizacion){
+    function cotizarEnvioDocumento($serviceType, CotizacionRequest $cotizacion,$fecha){
         //Cotiza un envio de documento
         $cotizacion->packingType = 'FEDEX_ENVELOPE';
-        return $this->_cotizarEnvio($serviceType, $cotizacion );
+        return $this->_cotizarEnvio($serviceType, $cotizacion,$fecha );
     }
 
-    function cotizarEnvioPaquete($serviceType, CotizacionRequest $cotizacion){
+    function cotizarEnvioPaquete($serviceType, CotizacionRequest $cotizacion,$fecha){
         //Cotiza un envio de documento
         $cotizacion->packingType = 'YOUR_PACKAGING';
-        return $this->_cotizarEnvio($serviceType, $cotizacion );
+        return $this->_cotizarEnvio($serviceType, $cotizacion, $fecha );
     }
 
 
 
-    private function _cotizarEnvio($serviceType, CotizacionRequest $cotizacion){
+    private function _cotizarEnvio($serviceType, CotizacionRequest $cotizacion, $fecha){
         //$serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, $servicePacking, $paquetes, $montoSeguro = false
 
         $preferedCurrency = 'MXN';
@@ -217,16 +220,20 @@ class FedexServices{
 
         $request['ReturnTransitAndCommit']                  = true;
         $request['RequestedShipment']['DropoffType']        = $pickUp; // valid values REGULAR_PICKUP, REQUEST_COURIER, ...
-        $request['RequestedShipment']['ShipTimestamp']      = date('c');//$cotizacion->fecha;
+        $request['RequestedShipment']['ShipTimestamp']      = $fecha;//date('c');//$cotizacion->fecha;
         $request['RequestedShipment']['ServiceType']        = $serviceType; // valid values STANDARD_OVERNIGHT, PRIORITY_OVERNIGHT, FEDEX_GROUND, ...
         $request['RequestedShipment']['PackagingType']      = $cotizacion->packingType; // valid values FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
+
+        
+        
+
         $request['RequestedShipment']['PreferredCurrency']  = $preferedCurrency;
         $request['RequestedShipment']['RateRequestTypes']   = 'PREFERRED';        
 
-        
+        //Seguro de envío
         if($cotizacion->hasSeguro){
             $request['RequestedShipment']['TotalInsuredValue']=array(
-                'Ammount'=>$cotizacion->montoSeguro,
+                'Amount'=>$cotizacion->montoSeguro,
                 'Currency'=>$preferedCurrency
             );
         }
@@ -324,8 +331,10 @@ class FedexServices{
                 return false;
             } 
             
-        } catch (SoapFault $exception) {
+        } catch (\Exception $exception) {
            printFault($exception, $client); 
+           error_log($client->__getLastRequest());
+           error_log($client->__getLastResponse());
            return false;       
         }
     }
@@ -371,7 +380,11 @@ class FedexServices{
     private function comprarEnvio(CompraEnvio $model, $servicePacking){
         require_once(Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/fedex-common.php');
 
-        $preferedCurrency = 'MXN';
+        //$preferedCurrency = 'MXN';
+
+        //TODO, en está llamada se una NMP y no MXN
+        //https://www.fedex.com/us/developer/WebHelp/ws/2014/dvg/WS_DVG_WebHelp/Appendix_F_Currency_Codes.htm
+        $preferedCurrency = 'NMP';
         $pickUp = 'REGULAR_PICKUP';
         $MasterTrackingId = null;
 
@@ -380,6 +393,9 @@ class FedexServices{
 
         $resultados = [];
 
+
+        
+
         foreach($model->paquetes as $item){
             $peso = $item->peso;
             $largo = $item->largo;
@@ -387,7 +403,7 @@ class FedexServices{
             $alto = $item->alto;
 
             //Create request
-            $request = $this->createRequest($model,$peso, $largo,$ancho,$alto, $preferedCurrency, $pickUp, $servicePacking,$MasterTrackingId);
+            $request = $this->createRequest($model,$peso, $largo,$ancho,$alto, $preferedCurrency, $pickUp, $servicePacking,$model->fecha, $model->valorSeguro ,$MasterTrackingId);
 
             //Realiza el envio
             $resultadoEnvio = $this->realizaEnvioCompra($model,$request,$servicePacking);
@@ -410,7 +426,7 @@ class FedexServices{
      * En caso de ser un envío multiple se debe enviar:
      *  MasterTrackingId - Este se obtiene despues de enviar el primer paquete
      */
-    private function createRequest($model,$peso, $largo,$ancho,$alto, $preferedCurrency, $pickUp, $servicePacking, $MasterTrackingId = null){
+    private function createRequest($model,$peso, $largo,$ancho,$alto, $preferedCurrency, $pickUp, $servicePacking, $fecha, $montoSeguro,  $MasterTrackingId = null){
         $request = $this->configClientRequest();
 
         $request['TransactionDetail'] = array('CustomerTransactionId' => '*** Express International Shipping Request using PHP ***');
@@ -421,11 +437,29 @@ class FedexServices{
             'Minor' => '0'
         );
         $request['RequestedShipment'] = [
-            'ShipTimestamp' => date('c'),
+            'ShipTimestamp' => date('c',strtotime($fecha)),//date('c'),
             'DropoffType' => $pickUp, // valid values REGULAR_PICKUP, REQUEST_COURIER, DROP_BOX, BUSINESS_SERVICE_CENTER and STATION
             'ServiceType' => $model->tipo_servicio, // valid values STANDARD_OVERNIGHT, PRIORITY_OVERNIGHT, FEDEX_GROUND, ...
             'PackagingType' => $servicePacking, // valid values FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
+            //'TotalInsuredValue' => $montoSeguro, //Valor del seguro
+            //Seguro de envío
         ];
+
+
+        //TODO: ns:ShipmentManifestDetail
+        // <xs:element name="ManifestDetail" type="ns:ShipmentManifestDetail" minOccurs="0">
+        //     <xs:annotation>
+        //       <xs:documentation>This specifies information related to the manifest associated with the shipment.</xs:documentation>
+        //     </xs:annotation>
+        //   </xs:element>
+
+        //Manejo del seguro
+        if($montoSeguro != null && $montoSeguro > 0 ){
+            $request['RequestedShipment']['TotalInsuredValue']=array(
+                'Currency'=>"NMP", //$preferedCurrency,
+                'Amount'=>$montoSeguro
+            );
+        }
             
         $request['RequestedShipment']['Recipient'] = $this->addRecipient(
                 $model->destino_cp,
@@ -527,14 +561,23 @@ class FedexServices{
                 printError($client, $response);
                 $res = new ResultadoEnvio();
                 $res->isError       = true;
-                $res->errorMessage  = $response->Notifications->Message;
+                if(is_array( $response->Notifications)){
+                    $res->errorMessage = "";
+                    foreach($response->Notifications as $not){
+                        $res->errorMessage  .= " - " . $not->Message;
+                    }
+                }else{
+                    $res->errorMessage  = $response->Notifications->Message;
+                }
                 $res->data          = json_encode($response);
                 return $res;
             }
         
             writeToLog($client);    // Write to log file
-        } catch (SoapFault $exception) {
+        } catch (\SoapFault $exception) {
             printFault($exception, $client);
+            error_log($client->__getLastRequest());       
+            error_log($client->__getLastResponse());  
         }
     }
 

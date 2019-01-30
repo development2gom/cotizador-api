@@ -40,25 +40,34 @@ class CotizadorPaquete{
 
         // UTILIZA USE_DHL ---------------------------------
         if(self::USE_DHL){
-            $res = $this->cotizaPaqueteDHL($cotizacionRequest);
-            if($res != null){
-                $data = array_merge($data, $res);
+            //UPS no maneja seguro en el envio
+            if(!$cotizacionRequest->hasSeguro){
+                $res = $this->cotizaPaqueteDHL($cotizacionRequest);
+                if($res != null){
+                    $data = array_merge($data, $res);
+                }
             }
         }
 
         // UTILIZA UPS ---------------------------------
         if(self::USE_UPS){
-            $res = $this->cotizaPaqueteUps($cotizacionRequest);
-            if($res != null){
-                $data = array_merge($data, $res);
+            //UPS no maneja seguro en el envio
+            if(!$cotizacionRequest->hasSeguro){
+                $res = $this->cotizaPaqueteUps($cotizacionRequest);
+                if($res != null){
+                    $data = array_merge($data, $res);
+                }
             }
         }
 
         // UTILIZA ESTAFETA ---------------------------------
         if(self::USE_ESTAFETA){
-            $res = $this->cotizaPaqueteEstafeta($cotizacionRequest);
-            if($res != null){
-                $data = array_merge($data, $res);
+            //UPS no maneja seguro en el envio
+            if(!$cotizacionRequest->hasSeguro){
+                $res = $this->cotizaPaqueteEstafeta($cotizacionRequest);
+                if($res != null){
+                    $data = array_merge($data, $res);
+                }
             }
         }
 
@@ -72,9 +81,15 @@ class CotizadorPaquete{
     private function cotizaPaqueteFedex(CotizacionRequest $cotizacion){
         $fedex = new FedexServices();
         //fecha actual
-        $fecha = date('Y-m-d');
-        $cotizacion->fecha = $fecha;
-        $disponiblidad = $fedex->disponibilidadPaquete($cotizacion);
+        //fecha del envio
+        $date = new \DateTime($cotizacion->fecha);    
+        $fechaEnvio = $date->format('Y-m-d');
+
+        
+        $disponiblidad = $fedex->disponibilidadPaquete($cotizacion,$fechaEnvio);
+
+        //Actualiza la fecha de evio
+        $fechaEnvio = date('c',strtotime($cotizacion->fecha));
 
         if(!$disponiblidad){
             return [];
@@ -93,7 +108,7 @@ class CotizadorPaquete{
         foreach($data['options'] as $item){
             $service = $item->Service;
 
-            $_cotizacion = $fedex->cotizarEnvioPaquete($service, $cotizacion);
+            $_cotizacion = $fedex->cotizarEnvioPaquete($service, $cotizacion,$fechaEnvio);
             if($_cotizacion){
                 array_push($cotizaciones, $_cotizacion);
             }
@@ -134,7 +149,8 @@ class CotizadorPaquete{
 
     private function cotizaPaqueteDhl(CotizacionRequest $cotizacion){
         $dhl = new DhlServices();
-        $fecha = date('c');
+        //$fecha = date('c');
+        $fecha = date('c',strtotime($cotizacion->fecha));
         $cotizaciones = $dhl->cotizarEnvioPaquete($cotizacion);
 
         return $cotizaciones;

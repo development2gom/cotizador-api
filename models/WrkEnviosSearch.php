@@ -90,7 +90,7 @@ class WrkEnviosSearch extends WrkEnvios
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'sort' => ['defaultOrder'=>['fch_creacion'=>SORT_DESC]]
+            'sort'  => ['defaultOrder'=>['fch_creacion'=>SORT_DESC]]
         ]);
 
         $this->load($params, '');

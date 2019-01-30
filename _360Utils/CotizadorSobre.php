@@ -41,16 +41,21 @@ class CotizadorSobre{
         }
 
         if(self::USE_UPS){
-            $res = $this->cotizaDocumentoUPS($cotizacionRequest);
-            if($res != null){
-                $data = array_merge($data, $res);
+            if(!$cotizacionRequest->hasSeguro){
+                $res = $this->cotizaDocumentoUPS($cotizacionRequest);
+                if($res != null){
+                    $data = array_merge($data, $res);
+                }
             }
         }
 
         if(self::USE_ESTAFETA){
-            $res = $this->cotizaDocumentoEstafeta($cotizacionRequest);
-            if($res != null){
-                $data = array_merge($data, $res);
+            if(!$cotizacionRequest->hasSeguro){
+
+                $res = $this->cotizaDocumentoEstafeta($cotizacionRequest);
+                if($res != null){
+                    $data = array_merge($data, $res);
+                }
             }
         }
 

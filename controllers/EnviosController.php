@@ -122,6 +122,26 @@ class EnviosController extends Controller{
         return $data;
     }
 
+    public function actionGetExportarEnvios(){
+        $envios = new WrkEnviosSearch();
+        $data = $envios->searchExportacion([]);
+
+        return $data;
+    }
+
+    public function actionGetImportarEnvios(){
+        $envios = new WrkEnviosSearch();
+        $data = $envios->searchImportacion([]);
+
+        return $data;
+    }
+
+    public function actionGetNacionales(){
+        $envios = new WrkEnviosSearch();
+        $data = $envios->searchNacionales([]);
+
+        return $data;
+    }
 
     /**
      * Realiza el tracking de un envio

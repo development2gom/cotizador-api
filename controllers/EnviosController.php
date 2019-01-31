@@ -200,23 +200,24 @@ class EnviosController extends Controller{
         return $data;
     }
 
-    public function actionGetExportarEnvios(){
-        $envios = new WrkEnviosSearch();
-        $data = $envios->searchExportacion([]);
-
-        return $data;
-    }
-
     public function actionGetImportarEnvios(){
         $envios = new WrkEnviosSearch();
-        $data = $envios->searchImportacion([]);
+        $data = $envios->searchImportarEnvios([]);
 
         return $data;
     }
 
-    public function actionGetNacionales(){
+    public function actionGetExportarEnvios(){
         $envios = new WrkEnviosSearch();
-        $data = $envios->searchNacionales([]);
+   
+        $data = $envios-> searchExportarEnvios([]);
+
+        return $data;
+    }
+
+    public function actionGetNacionalesEnvios(){
+        $envios = new WrkEnviosSearch();
+        $data = $envios->searchMostrador([]);
 
         return $data;
     }

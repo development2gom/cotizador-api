@@ -172,7 +172,7 @@ class WrkEnviosSearch extends WrkEnvios
 
     public function searchImportacion($params)
     {
-        $query = WrkEnvios::find()->joinWith(['origen'])->joinWith('destino')->where(['is not', 'txt_folio', null])->andWhere(['is not', 'txt_tracking_number', null]);
+        $query = WrkEnvios::find()->joinWith(['origen'])->joinWith('destino')->where(['is not', 'txt_folio', null]);
 
         // add conditions that should always apply here
 

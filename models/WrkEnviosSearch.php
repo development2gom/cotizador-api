@@ -239,7 +239,7 @@ class WrkEnviosSearch extends WrkEnvios
             'id_destino' => $this->id_destino,
             'id_proveedor' => $this->id_proveedor,
             'id_pago' => $this->id_pago,
-            'id_cliente' => $this->id_cliente,
+            //'id_cliente' => $this->id_cliente,
             'id_tipo_empaque' => $this->id_tipo_empaque,
             'num_costo_envio' => $this->num_costo_envio,
             'num_impuesto' => $this->num_impuesto,

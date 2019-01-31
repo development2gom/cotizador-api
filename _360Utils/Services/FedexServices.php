@@ -11,6 +11,7 @@ use app\_360Utils\Entity\ResultadoEnvio;
 use app\_360Utils\Entity\CotizacionRequest;
 use app\_360Utils\Entity\TrackingResult;
 use yii\base\ExitException;
+use function GuzzleHttp\json_encode;
 
 
 class FedexServices{
@@ -210,7 +211,7 @@ class FedexServices{
         $client = new \SoapClient($path_to_wsdl, array('trace' => 1));
         $request = $this->configClientRequest();
 
-        $request['TransactionDetail'] = array('CustomerTransactionId' => ' *** Rate Request using PHP ***');
+        $request['TransactionDetail'] = array('CustomerTransactionId' => ' *** Rate Request ENVIOS 360 ***');
         $request['Version'] = array(
             'ServiceId' => 'crs', 
             'Major' => '22', 
@@ -263,7 +264,33 @@ class FedexServices{
             
             $response = $client->getRates($request);
                 
-            if ($response -> HighestSeverity != 'FAILURE' && $response -> HighestSeverity != 'ERROR'){  
+            //hay error 
+
+            if ($response->HighestSeverity == 'FAILURE' || $response -> HighestSeverity == 'ERROR'){  
+
+                error_log("Error al cotizar FEDEX:");
+                if(is_array($response->Notifications)){
+                    foreach($response->Notifications as $not){
+                        error_log("Notification: " . $not->Severity . " Message: " . $not->Message . " Code: " . $not->Code);
+                        if($not->Code == 200){
+                            error_log("Rating is temporarily unavailable, please try again later.");
+                        }
+                    }
+                }else{
+                    error_log("Notification: " . $response->Notifications->Severity . " Message: " . $response->Notifications->Message . " Code: " . $response->Notifications->Code);
+                    if($not->Code == 200){
+                        error_log("Rating is temporarily unavailable, please try again later.");
+                    }
+                }
+
+                    //error_log("JSON REQUEST: " . json_encode($request));
+                    error_log($client->__getLastRequest());
+                    error_log($client->__getLastResponse());
+
+                return null;
+            }
+
+             
                 
                 $rateReply = $response->RateReplyDetails;
 
@@ -322,14 +349,9 @@ class FedexServices{
                 }
 
                 $cotizacion->serviceTypeStr  = str_replace('_', ' ',$serviceType); // FIRST_OVERNIGHT, PRIORITY_OVERNIGHT
-                
-
-
 
                 return $cotizacion;
-            }else{
-                return false;
-            } 
+            
             
         } catch (\Exception $exception) {
            printFault($exception, $client); 

@@ -148,7 +148,7 @@ class CotizadorSobre{
         $fecha = date('c',strtotime($cotizacion->fecha));
 
         $cotizaciones = [];
-        $count = 0;
+        
         foreach($data['options'] as $item){
             if(!isset($item->Service)){
                 continue;
@@ -160,10 +160,7 @@ class CotizadorSobre{
                 array_push($cotizaciones, $cot);
             }
 
-            $count++;
-            if($count >1){
-                break;
-            }
+           
         }
 
 

@@ -51,13 +51,13 @@ class WrkEnvios extends \yii\db\ActiveRecord
     {
         return [
             
-            [['id_origen', 'id_destino', 'id_proveedor', 'id_pago', 'id_cliente', 'id_tipo_empaque', 'b_habilitado'], 'integer'],
-            [['id_tipo_empaque', 'id_destino', 'id_origen', 'id_proveedor'], 'required'],
+            [['id_origen', 'id_destino', 'id_proveedor', 'id_pago', 'id_cliente', 'id_tipo_empaque', 'b_habilitado','b_requiere_recoleccion'], 'integer'],
+            [['id_tipo_empaque', 'id_destino', 'id_origen', 'id_proveedor','fch_recoleccion','b_requiere_recoleccion'], 'required'],
             [['num_costo_envio', 'num_impuesto', 'num_subtotal'], 'number'],
             [['txt_folio', 'txt_tipo'], 'string', 'max' => 50],
             [['txt_currency'], 'string', 'max' => 20],
             [['uddi'], 'string', 'max' => 100],
-            [['txt_currency'], 'safe'],
+            [['txt_currency','fch_recoleccion','num_monto_seguro','b_asegurado'], 'safe'],
             [['uddi'], 'unique'],
             [['id_cliente'], 'exist', 'skipOnError' => true, 'targetClass' => EntClientes::className(), 'targetAttribute' => ['id_cliente' => 'id_cliente']],
             [['id_destino'], 'exist', 'skipOnError' => true, 'targetClass' => WrkDestino::className(), 'targetAttribute' => ['id_destino' => 'id_destino']],
@@ -296,6 +296,7 @@ class WrkEnvios extends \yii\db\ActiveRecord
         $fields[] = "facturaXmlUrl";
         $fields[] = "facturaPdfUrl";
         
+        
         return $fields;
     }
 
@@ -340,6 +341,7 @@ class WrkEnvios extends \yii\db\ActiveRecord
         // Guardar los datos del envio
         if(!$this->save()){
 
+            $errors = $this->errors;
             $transaction->rollBack();
             throw new HttpException(500, "No se pudo guardar en la base de datos\n".Utils::getErrors($this));
         }else{

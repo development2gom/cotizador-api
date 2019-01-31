@@ -233,6 +233,9 @@ class Calendario
         return $nombreMes;
     }
 
+     
+
+
     /**
      * Regresa el nombre del día
      * @param string $fecha
@@ -267,5 +270,46 @@ class Calendario
         }
 
         return $dayName;
+    }
+
+
+    /**
+     * Recupera la cantidad de tiempo que ha transcurrido desde la fecha indicada
+     * En segundos, minutos, horas y dias
+     */
+    public static function tiempoTranscurridoDesde( $fechaInicio,  $fechaFin = "now"){
+        $unMin = 60;
+        $unaHora = $unMin * 60;
+        $unDia = $unaHora * 24;
+
+        $timeFirst  = strtotime($fechaInicio);
+        $timeSecond = strtotime($fechaFin);
+        $differenceInSeconds = $timeSecond - $timeFirst;
+        if($differenceInSeconds < $unMin){
+            return  (floor($differenceInSeconds) ) . " segundos";
+        }else if($differenceInSeconds < $unaHora ){
+            return  (floor($differenceInSeconds/$unMin )) . " minutos";
+        }else if($differenceInSeconds < $unDia ){
+            return  (floor($differenceInSeconds/$unaHora )) . " horas";
+        }else{
+            return  (floor($differenceInSeconds/$unDia )) . " días";
+        }
+    }
+
+
+    /**
+     * Recupera la fecha actual y le agrega la cantidad de dias indicados
+     * Si es negativo le resta los dias
+     */
+    public static function getFechaActualMasDias($numDias){
+
+        $addTime =  $numDias . " day";
+        if($numDias > 0){
+            $addTime = " + " . $addTime;    
+        }else{
+            $addTime = " - " . $addTime;   
+        }
+        $date = new \DateTime($addTime);
+        return $date->format('Y-m-d H:i:s');       
     }
 }

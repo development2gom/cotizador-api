@@ -33,6 +33,8 @@ class CompraEnvio{
     var $destino_compania;
     var $destino_correo;
 
+    //Seguro del envío
+    var $hasSeguro = false;
     var $valorSeguro = 0;
 
     var  $fecha = "2019-01-15";

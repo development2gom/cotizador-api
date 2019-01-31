@@ -277,17 +277,12 @@ class UpsServices{
 
 
     //------------- COTIZACION ---------------
-    function cotizarEnvioDocumento($cp_origen,$stado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $paquetes){
+    function cotizarEnvioDocumento(CotizacionRequest $cotizacion){
         $servicios = [self::S_AIR_1DAY,self::S_AIR_2DAY,self::S_GROUND];
         $responses = [];
 
-        $paquete = $paquetes[0];
-
-        //Cambia el peso de kilos a libras
-        $peso = $paquete['num_peso'];// * 2.20462;
-
         foreach($servicios as $item){
-            $res = $this->cotizarEnvioDocumentoInterno($item,$cp_origen,$stado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $peso);
+            $res = $this->cotizarEnvioDocumentoInterno($item,$cotizacion);
             if($res != null){
                 array_push($responses,$res);
             }
@@ -434,11 +429,11 @@ class UpsServices{
     /**
      * Envío de sobre
      */
-    private function cotizarEnvioDocumentoInterno($tipo_servicio,$cp_origen,$estado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $peso_kilos){
+    private function cotizarEnvioDocumentoInterno($tipo_servicio, CotizacionRequest $cotizacionRequest){
+
+        $peso = $cotizacionRequest->paquetes[0]->peso;
 
         $json = [];
-
-        
         $json["UPSSecurity"] = $this->getSecurity();
         
         $json["RateRequest"] = [];
@@ -448,9 +443,10 @@ class UpsServices{
         $json["RateRequest"]["Request"]["TransactionReference"]["CustomerContext"] = self::UPS_CUSTOMER_CONTEXT;
               
         $json["RateRequest"]["Shipment"] = [];
-        $json["RateRequest"]["Shipment"]["Shipper"] = $this->getShipper($estado_origen,$cp_origen,$pais_origen);
-        $json["RateRequest"]["Shipment"]["ShipTo"] = $this->getShipTo($cp_destino,$estado_destino,$pais_destino);
-        $json["RateRequest"]["Shipment"]["ShipFrom"] = $this->getShipper($estado_origen,$cp_origen,$pais_origen);
+        $json["RateRequest"]["Shipment"]["Shipper"] = $this->getShipper($cotizacionRequest->origenStateCode,$cotizacionRequest->origenCP,$cotizacionRequest->origenCountry);
+        $json["RateRequest"]["Shipment"]["ShipTo"] = $this->getShipTo($cotizacionRequest->destinoCP, $cotizacionRequest->destinoStateCode,$cotizacionRequest->destinoCountry);
+        $json["RateRequest"]["Shipment"]["ShipFrom"] = $this->getShipper($cotizacionRequest->origenStateCode,$cotizacionRequest->origenCP,$cotizacionRequest->origenCountry);
+
 
 
         $json["RateRequest"]["Shipment"]["Service"] = [];
@@ -467,7 +463,7 @@ class UpsServices{
         $json["RateRequest"]["Shipment"]["Package"]["PackageWeight"]["UnitOfMeasurement"]["Code"] = "kgs";
         $json["RateRequest"]["Shipment"]["Package"]["PackageWeight"]["UnitOfMeasurement"]["Description"] = "kilos";
                     
-        $json["RateRequest"]["Shipment"]["Package"]["PackageWeight"]["Weight"]= "". $peso_kilos;
+        $json["RateRequest"]["Shipment"]["Package"]["PackageWeight"]["Weight"]= "". $peso; 
         
         $json["RateRequest"]["Shipment"]["ShipmentRatingOptions"] = [];
         $json["RateRequest"]["Shipment"]["NegotiatedRatesIndicator"] =  "";

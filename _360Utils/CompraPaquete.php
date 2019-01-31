@@ -15,9 +15,6 @@ class CompraPaquete{
 
     function comprarPaquete(CompraEnvio $compra){
 
-
-       
-
         switch(strtoupper( $compra->carrier)){
             case "FEDEX":
                 $fedex = new FedexServices();

@@ -5,6 +5,7 @@ namespace app\_360Utils;
 use app\_360Utils\Services\UpsServices;
 use app\_360Utils\Services\FedexServices;
 use app\_360Utils\Services\EstafetaServices;
+use app\_360Utils\Entity\CotizacionRequest;
 
 
 
@@ -21,7 +22,7 @@ class CotizadorSobre{
       const USE_DGOM        = false; //HABILITA DGOM
 
 
-    function realizaCotizacion($json,$paquetes){
+    function realizaCotizacion(CotizacionRequest $cotizacionRequest){
        
         //Resultado de la busqueda
         $data = [];
@@ -29,28 +30,32 @@ class CotizadorSobre{
        
        // UTILIZA FEDEX ---------------------------------
         if(self::USE_FEDEX){
-            $res = $this->cotizaDocumentoFedex($json,$paquetes);
+            try{
+            $res = $this->cotizaDocumentoFedex($cotizacionRequest);
             $data = array_merge($data, $res);
+            }catch(\Exception $e){
+                $mess = $e->getMessage();
+                error_log("USE FEDEX Cotizacion error: " + $mess);
+            }
             
         }
 
-        // UTILIZA 2GOM ---------------------------------
-        if(self::USE_DGOM){
-            $res = $this->cotizaDocumentoDGOM($json,$paquetes);
-            $data = array_merge($data, $res);
-        }
-
         if(self::USE_UPS){
-            $res = $this->cotizaDocumentoUPS($json,$paquetes);
-            if($res != null){
-                $data = array_merge($data, $res);
+            if(!$cotizacionRequest->hasSeguro){
+                $res = $this->cotizaDocumentoUPS($cotizacionRequest);
+                if($res != null){
+                    $data = array_merge($data, $res);
+                }
             }
         }
 
         if(self::USE_ESTAFETA){
-            $res = $this->cotizaDocumentoEstafeta($json,$paquetes);
-            if($res != null){
-                $data = array_merge($data, $res);
+            if(!$cotizacionRequest->hasSeguro){
+
+                $res = $this->cotizaDocumentoEstafeta($cotizacionRequest);
+                if($res != null){
+                    $data = array_merge($data, $res);
+                }
             }
         }
 
@@ -90,38 +95,43 @@ class CotizadorSobre{
 
 
     // ----------------------------- COTIZACION ESTAFETA ----------------------------------------
-    private function cotizaDocumentoEstafeta($json, $paquetes){
+    private function cotizaDocumentoEstafeta(CotizacionRequest $cotizacionRequest){
         //Estafeta solo tiene entregas de MX a MX, en caso contrario, no se pide la cotizacón
-        if($json->pais_origen != "MX" || $json->pais_destino != "MX"){
+        if($cotizacionRequest->origenCountry != "MX" || $cotizacionRequest->destinoCountry != "MX"){
             return null;
         }
 
 
         $estafeta = new EstafetaServices();
         $fecha = "";
-        $cotizaciones = $estafeta->cotizarEnvioDocumento($json->cp_origen,  $json->cp_destino, $fecha, $paquetes);
+        $cotizaciones = $estafeta->cotizarEnvioDocumento($cotizacionRequest);
         return $cotizaciones;
     }
 
     // ----------------------------- COTIZACION UPS ----------------------------------------
-    private function cotizaDocumentoUPS($json, $paquetes){
-        $ups = new UpsServices();
-        $fecha = "";
-        $cotizaciones = $ups->cotizarEnvioDocumento($json->cp_origen, $json->estado_origen, $json->pais_origen, $json->cp_destino, $json->estado_destino , $json->pais_destino, $fecha, $paquetes);
-
-        return $cotizaciones;
+    private function cotizaDocumentoUPS(CotizacionRequest $cotizacion){
+        //UPS no maneja seguro en el envio
+        if(!$cotizacion->hasSeguro){
+            $ups = new UpsServices();
+            $fecha = "";
+            $cotizaciones = $ups->cotizarEnvioDocumento($cotizacion);
+            return $cotizaciones;
+        }
     }
     
 
 //---------------------------------- COTIZACION DE FEDEX -----------------------------------
 
-    private function cotizaDocumentoFedex($json,$paquetes){
+    private function cotizaDocumentoFedex(CotizacionRequest $cotizacion){
         // Metodos de envio disponibles
 
         $fedex = new FedexServices();
-        //FIXME: fecha actual
-        $fecha = date('Y-m-d');
-        $disponiblidad = $fedex->disponibilidadDocumento($json->cp_origen, $json->pais_origen, $json->cp_destino, $json->pais_destino, $fecha);
+        //fecha del envio
+        $date = new \DateTime($cotizacion->fecha);
+        $fechaEnvio = $date->format('Y-m-d');
+
+        //Consulta las opciones disponibles de fedex para envios de paquetes
+        $disponiblidad = $fedex->disponibilidadDocumento($cotizacion, $fechaEnvio);
 
         if(!$disponiblidad){
             return [];
@@ -134,25 +144,23 @@ class CotizadorSobre{
         $data['options']        = $disponiblidad->Options;
 
         // FIXME 
-        $fecha = date('c');
+        //$fecha = date('c');
+        $fecha = date('c',strtotime($cotizacion->fecha));
 
         $cotizaciones = [];
-        $count = 0;
+        
         foreach($data['options'] as $item){
             if(!isset($item->Service)){
                 continue;
             }
             $service = $item->Service;
 
-            $cotizacion = $fedex->cotizarEnvioDocumento($service, $json->cp_origen, $json->pais_origen, $json->cp_destino, $json->pais_destino, $fecha, $paquetes);
-            if($cotizacion){
-                array_push($cotizaciones, $cotizacion);
+            $cot = $fedex->cotizarEnvioDocumento($service, $cotizacion,$fecha);
+            if($cot){
+                array_push($cotizaciones, $cot);
             }
 
-            $count++;
-            if($count >1){
-                break;
-            }
+           
         }
 
 

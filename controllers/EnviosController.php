@@ -41,7 +41,70 @@ class EnviosController extends Controller{
         'collectionEnvelope' => 'items',
     ];
 
-    // Crea un envio
+
+    /**
+     * Action para la cotizacion de un envio ya sea paquete o sea sobre
+     */
+    public function actionCotizarV2(){
+        $request = Yii::$app->request;
+        $params = $request->bodyParams;
+
+        $tipoPaquete = $request->getBodyParam("tipo_paquete");
+
+        if(!$tipoPaquete){
+            throw new HttpException(500, "No se envio el tipo de paquete");
+        }
+        $cotizacion                   = new CotizacionRequest();
+        $cotizacion->origenCP         = $request->getBodyParam("cp_from");
+        $cotizacion->origenCountry    = $request->getBodyParam("country_code_from");
+        $cotizacion->origenStateCode  = $request->getBodyParam("state_code_from");
+
+        $cotizacion->destinoCP        = $request->getBodyParam("cp_to");
+        $cotizacion->destinoCountry   = $request->getBodyParam("country_code_to");
+        $cotizacion->destinoStateCode = $request->getBodyParam("state_code_to");
+
+        //Fecha de solicitud de envio o recoleccion
+        if($request->getBodyParam("fch_recoleccion") != null){
+            $cotizacion->fecha            = $request->getBodyParam("fch_recoleccion");
+        }else{
+            $cotizacion->fecha            = Calendario::getFechaActualMasDias(1); //Si no indica la fecha, le agrega 1 día para el envio
+        }
+
+        //Uso de seguro del envío
+        if($request->getBodyParam("num_monto_seguro") != null){
+            $cotizacion->montoSeguro           = $request->getBodyParam("num_monto_seguro");
+            $cotizacion->hasSeguro             = true;
+        }
+       
+
+        if(strtoupper($tipoPaquete)=="SOBRE"){
+            $cotizacion->isPaquete = false;
+            $dimenSobre = $request->getBodyParam("dimensiones_sobre");
+            $cotizacion->addSobre($dimenSobre["num_peso"]/1000);
+        }else{
+            $cotizacion->isPaquete = true;
+            $paquetesRequest = $request->getBodyParam("dimensiones_paquete");
+           
+            foreach($paquetesRequest as $paquete){
+                $cotizacion->addPaqueteElementos($paquete["num_alto"],$paquete["num_ancho"],$paquete["num_largo"],$paquete["num_peso"]);
+            }
+        }
+
+
+        //Llama al servicio de contizacion pertinente
+       if($cotizacion->isPaquete){
+            $cotizador = new CotizadorPaquete();
+            return $cotizador->realizaCotizacion($cotizacion);
+       }else{
+            $cotizador = new CotizadorSobre();
+            return $cotizador->realizaCotizacion($cotizacion);
+       }
+    }
+
+
+
+
+    // Crea un envio en la base de datos
     public function actionCreateEnvio(){
         $request = Yii::$app->request;
         $params = $request->bodyParams;
@@ -73,12 +136,27 @@ class EnviosController extends Controller{
 
 
         if($envio->load($params, '') && $origen->load($params, "origen") && $destino->load($params, "destino")){
+
+            //Verifica el asunto del seguro del envio
+            if(isset($envio->b_asegurado) && isset($envio->num_monto_seguro) && //Valida que los valores existan
+             (int)$envio->num_monto_seguro == $envio->num_monto_seguro &&  //Valida que se a un numero entero
+             (int)$envio->num_monto_seguro > 0){ //Valida que sea positivo
+                $envio->b_asegurado = 1;
+            }else{
+                $envio->b_asegurado = 0;
+                $envio->num_monto_seguro = null;
+            }
+
+            //Guarda la información del envio en la base de datos
             $envio->generarNuevoEnvio($cliente, $origen, $destino, $proveedor, $tipoEmpaque, $paquetes, $sobre);
             return $envio;
         }else{
             throw new HttpException(500, "No se enviaron todos los datos");
         }
     }
+
+
+
     public function actionActualizarEnvio(){
         $request = Yii::$app->request;
         $params = $request->bodyParams;
@@ -204,65 +282,13 @@ class EnviosController extends Controller{
 
    
 
-    /**
-     * Action para la cotizacion de un envio ya sea paquete o sea sobre
-     */
-    public function actionCotizarV2(){
-        $request = Yii::$app->request;
-        $params = $request->bodyParams;
-
-        $tipoPaquete = $request->getBodyParam("tipo_paquete");
-
-        if(!$tipoPaquete){
-            throw new HttpException(500, "No se envio el tipo de paquete");
-        }
-        $cotizacion                   = new CotizacionRequest();
-        $cotizacion->origenCP         = $request->getBodyParam("cp_from");
-        $cotizacion->origenCountry    = $request->getBodyParam("country_code_from");
-        $cotizacion->origenStateCode  = $request->getBodyParam("state_code_from");
-
-        $cotizacion->destinoCP        = $request->getBodyParam("cp_to");
-        $cotizacion->destinoCountry   = $request->getBodyParam("country_code_to");
-        $cotizacion->destinoStateCode = $request->getBodyParam("state_code_to");
-
-       
-
-
-
-        if(strtoupper($tipoPaquete)=="SOBRE"){
-            $cotizacion->isPaquete = false;
-            $dimenSobre = $request->getBodyParam("dimensiones_sobre");
-            $cotizacion->addSobre($dimenSobre["num_peso"]/1000);
-        }else{
-            $cotizacion->isPaquete = true;
-            $paquetesRequest = $request->getBodyParam("dimensiones_paquete");
-           
-            foreach($paquetesRequest as $paquete){
-                // if($paquete["num_paquetes"]>1){
-                //     for($i=0; $i<$paquete["num_paquetes"]; $i++){
-                //         $cotizacion->addPaqueteElementos($paquete["num_alto"],$paquete["num_ancho"],$paquete["num_largo"],$paquete["num_peso"]);
-                //     }
-                // }else{
-                    $cotizacion->addPaqueteElementos($paquete["num_alto"],$paquete["num_ancho"],$paquete["num_largo"],$paquete["num_peso"]);
-               // } 
-            }
-        }
-
-
-        //Llama al servicio de contizacion pertinente
-       if($cotizacion->isPaquete){
-            $cotizador = new CotizadorPaquete();
-            return $cotizador->realizaCotizacion($cotizacion);
-       }else{
-            $cotizador = new CotizadorSobre();
-            return $cotizador->realizaCotizacion($cotizacion);
-       }
-    }
+    
 
 
     /**
-     * MEtodo para registrar un envio con el carrier
+     * Metodo para registrar un envio con el carrier
      * y obtener sus etiquetas
+     * ----------- COMPRA DEL ENVIO ---------
      */
     public function actionGenerarLabel2(){
         $request = Yii::$app->request;
@@ -343,6 +369,9 @@ class EnviosController extends Controller{
     }
 
 
+    /**
+     * Crea el objto de la compra del envio
+     */
     private function createCompraEnvio(WrkEnvios $envio,$origen , $destino){
         $compra = new CompraEnvio();
         $compra->servicio = $envio->proveedor->uddi;
@@ -366,6 +395,13 @@ class EnviosController extends Controller{
         $compra->destino_nombre_persona = $destino->txt_nombre;
         $compra->destino_telefono = $destino->num_telefono;
         $compra->destino_compania = $destino->txt_empresa;
+
+        $compra->fecha = $envio->fch_recoleccion;
+
+        $compra->hasSeguro = $envio->b_asegurado;
+        if($envio->b_asegurado){
+            $compra->valorSeguro = $envio->num_monto_seguro;
+        }
 
         return $compra;
     }

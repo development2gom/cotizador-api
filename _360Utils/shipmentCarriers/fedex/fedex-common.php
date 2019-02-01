@@ -36,14 +36,16 @@ function printRequestResponse($client){
  *  Print SOAP Fault
  */  
 function printFault($exception, $client) {
-   echo '<h2>Fault</h2>' . "<br>\n";                        
-   echo "<b>Code:</b>{$exception->faultcode}<br>\n";
-   echo "<b>String:</b>{$exception->faultstring}<br>\n";
+   $res = '<h2>Fault</h2>' . "<br>\n";                        
+   $res .= "<b>Code:</b>{$exception->faultcode}<br>\n";
+   $res .=  "<b>String:</b>{$exception->faultstring}<br>\n";
    writeToLog($client);
     
-  echo '<h2>Request</h2>' . "\n";
-	echo '<pre>' . htmlspecialchars($client->__getLastRequest()). '</pre>';  
-	echo "\n";
+	$res .= '<h2>Request</h2>' . "\n";
+	$res .= '<pre>' . htmlspecialchars($client->__getLastRequest()). '</pre>';  
+	$res .= "\n";
+
+	error_log("fedex-common " . $res);
 }
 
 /**

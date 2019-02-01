@@ -64,6 +64,7 @@ class EnviosController extends Controller{
         $cotizacion->destinoStateCode = $request->getBodyParam("state_code_to");
 
         //Fecha de solicitud de envio o recoleccion
+        $cotizacion->solicitaPickup = $request->getBodyParam("b_requiere_recoleccion");
         if($request->getBodyParam("fch_recoleccion") != null){
             $cotizacion->fecha            = $request->getBodyParam("fch_recoleccion");
         }else{
@@ -91,7 +92,7 @@ class EnviosController extends Controller{
         }
 
 
-        //Llama al servicio de contizacion pertinente
+        //Llama al servicio de cotización pertinente
        if($cotizacion->isPaquete){
             $cotizador = new CotizadorPaquete();
             return $cotizador->realizaCotizacion($cotizacion);

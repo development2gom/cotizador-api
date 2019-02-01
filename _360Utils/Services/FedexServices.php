@@ -247,11 +247,13 @@ class FedexServices{
         $request['RequestedShipment']['RequestedPackageLineItems'] = [];
         
         //Agrega los paquetes
-        foreach($cotizacion->paquetes as $item){
+        foreach( $cotizacion->paquetes as $item){
             $largo = $item->largo;
             $ancho = $item->ancho;
             $alto = $item->alto;
-            $peso = $item->peso;
+
+            $peso = $item->getPesoFinal();
+
             $pkg = $this->addPackageLineItem($peso, $largo, $ancho, $alto);
             array_push($request['RequestedShipment']['RequestedPackageLineItems'], $pkg);
         }
@@ -419,7 +421,7 @@ class FedexServices{
         
 
         foreach($model->paquetes as $item){
-            $peso = $item->peso;
+            $peso = $item->getPesoFinal();
             $largo = $item->largo;
             $ancho = $item->ancho;
             $alto = $item->alto;

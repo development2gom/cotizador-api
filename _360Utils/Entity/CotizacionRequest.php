@@ -16,6 +16,7 @@ class CotizacionRequest{
     public $destinoStateCode;
 
     //Fecha en la que se planea hacer el envío o la recoleccion
+    public $solicitaPickup = false;
     public $fecha;
 
     
@@ -32,6 +33,17 @@ class CotizacionRequest{
 
     function addPaquete(Paquete $pkg){
         array_push($this->paquetes, $pkg);
+    }
+
+    /**
+     * Calcula el peso volumetrico de los paquetes
+     */
+    function getPesoVolumetricoTotal(){
+        $res = 0;
+        foreach($this->paquetes as $pk){
+            $res += $pk->getPesoVolumetrico();
+        }
+        return $res;
     }
 
     function addSobre($peso){

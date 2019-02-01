@@ -12,6 +12,24 @@ class Paquete{
     var $peso = 0;
 
 
+    /**
+     *  Recupera el peso que debe utilizar ya sea el indicado o el volumétrico
+     */
+    public function getPesoFinal(){
+        if($this->peso > $this->getPesoVolumetrico()){
+            return $this->peso;
+        }else{
+            return $this->getPesoVolumetrico();
+        }
+    }
+
+    /**
+     * Calcula el peso volumétrico del paquete
+     */
+    public function getPesoVolumetrico(){
+        return ($this->alto * $this->ancho * $this->largo) / 5000;
+    }
 }
+
 
 ?>

@@ -276,7 +276,9 @@ class UpsServices{
     }
 
 
-    //------------- COTIZACION ---------------
+    //----------------------- COTIZACION ------------------------
+
+
     function cotizarEnvioDocumento(CotizacionRequest $cotizacion){
         $servicios = [self::S_AIR_1DAY,self::S_AIR_2DAY,self::S_GROUND];
         $responses = [];
@@ -468,6 +470,11 @@ class UpsServices{
         $json["RateRequest"]["Shipment"]["ShipmentRatingOptions"] = [];
         $json["RateRequest"]["Shipment"]["NegotiatedRatesIndicator"] =  "";
 
+         //Pickup request
+         if($cotizacionRequest->solicitaPickup){
+            $json['RateRequest']['PickupRequest'] = ['PickupDate'=>$cotizacionRequest->fecha];
+        }
+
 
         $endpoint = $this->URL_SERVICE . 'Rate';
 
@@ -545,7 +552,7 @@ class UpsServices{
     private function createPakageCotizacion(Paquete $paquete){
 
         
-        $peso  = $paquete->peso;//['num_peso'];
+        $peso  = $peso = $paquete->getPesoFinal();//$paquete->peso;//['num_peso'];
         $largo = ceil($paquete->largo);
         $ancho = ceil($paquete->ancho);
         $alto  = ceil($paquete->alto);
@@ -576,7 +583,7 @@ class UpsServices{
     }
 
     private function createPakageCompra($paquete){
-        $peso  = $paquete->peso;
+        $peso  = $paquete->getPesoFinal();
         $largo = ceil($paquete->largo);
         $ancho = ceil($paquete->ancho);
         $alto  = ceil($paquete->alto);
@@ -612,7 +619,7 @@ class UpsServices{
    
 
     /**
-     * Envío de sobre
+     * Cotización de envio --------------
      */
     private function cotizarEnvioPaqueteInterno($tipo_servicio,CotizacionRequest $cotizacionRequest){
         //$cp_origen,$estado_origen, $pais_origen, $cp_destino, $estado_destino, $pais_destino, $fecha, $paquetes
@@ -648,6 +655,12 @@ class UpsServices{
         
         $json["RateRequest"]["Shipment"]["ShipmentRatingOptions"] = [];
         $json["RateRequest"]["Shipment"]["NegotiatedRatesIndicator"] =  "";
+
+
+        //Pickup request
+        if($cotizacionRequest->solicitaPickup){
+            $json['RateRequest']['PickupRequest'] = ['PickupDate'=>$cotizacionRequest->fecha];
+        }
 
 
         $endpoint = $this->URL_SERVICE . 'Rate';

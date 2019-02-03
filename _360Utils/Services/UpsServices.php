@@ -12,6 +12,7 @@ use app\_360Utils\Entity\CotizacionRequest;
 use app\_360Utils\Entity\Paquete;
 use app\_360Utils\Entity\TrackingResult;
 use app\_360Utils\Entity\Evento;
+use app\models\MessageResponse;
 
 class UpsServices{
 
@@ -377,6 +378,9 @@ class UpsServices{
             return null;
         }
     
+
+        $messageResponse = new MessageResponse();
+
         // Decode the response
         $responseData = json_decode($response, TRUE);
 
@@ -386,7 +390,11 @@ class UpsServices{
             $codeError = $responseData['Fault']['detail']['Errors']['ErrorDetail']['PrimaryErrorCode']['Code'];
             $descError = $responseData['Fault']['detail']['Errors']['ErrorDetail']['PrimaryErrorCode']['Description'];
             error_log("Error con el servicio de UPS: " . $severityError . " " . $codeError . " " . $descError);
-            return null;
+
+            $messageResponse->code = -1;
+            $messageResponse->message = "Error con el servicio de UPS: " . $severityError . " " . $codeError . " " . $descError;
+
+            return $messageResponse;
         }
 
         
@@ -423,8 +431,11 @@ class UpsServices{
             }
         }
         
+        $messageResponse->code = 1;
+        $messageResponse->data = $resultado;
+        $messageResponse->message = "Compra correcta UPS";
 
-        return $resultado;
+        return $messageResponse;
     }
 
     

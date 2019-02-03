@@ -48,7 +48,7 @@ class CompraEnvio{
     function getTotalWeight(){
         $res = 0.0;
         foreach($this->paquetes as $item){
-            $res += $item->peso;
+            $res += $item->getPesoFinal();
         }
 
         return $res;

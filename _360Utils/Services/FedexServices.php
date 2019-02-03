@@ -12,6 +12,8 @@ use app\_360Utils\Entity\CotizacionRequest;
 use app\_360Utils\Entity\TrackingResult;
 use yii\base\ExitException;
 use function GuzzleHttp\json_encode;
+use Codeception\Lib\Console\Message;
+use app\models\MessageResponse;
 
 
 class FedexServices{
@@ -440,7 +442,12 @@ class FedexServices{
             $resultados[] = $resultadoEnvio;
         }
 
-        return $resultados;
+        $messageResponse = new MessageResponse();
+        $messageResponse->responseCode = count($resultados);
+        $messageResponse->data = $resultados;
+        $messageResponse->message = "Fedex Master traking id: " . $MasterTrackingId;
+
+        return $messageResponse;
     }
 
 

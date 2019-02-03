@@ -309,15 +309,21 @@ class EnviosController extends Controller{
         
         if($envio->id_tipo_empaque == self::TIPO_ENVIO_PAQUETE ){
             $compraPaquete = new CompraPaquete();
-            $res = $compraPaquete->comprarPaquete($compra);
+            $messageResponse = $compraPaquete->comprarPaquete($compra);
         }else{
             // implementar sobre
             $compraSobre = new CompraSobre();
             $res = $compraSobre->comprarSobre($compra);
         }
 
+        //Verifica la respuesta de res
+        if($messageResponse->responseCode < 1){
+            return $messageResponse;
+        }
+
         $resEnvios = [];
-        foreach($res as $item){
+        $res = $messageResponse->data;
+        foreach($messageResponse->data as $item){
             if($item->isError){
                 continue;
             }
@@ -346,7 +352,9 @@ class EnviosController extends Controller{
         $envio->txt_tracking_number = $res[0]->jobId;
         $envio->save();
 
-        return ['envio'=>$envio,'comprarPaqueteRes'=>$res, 'resEnvios'=>$resEnvios];        
+        $messageResponse->data = ['envio'=>$envio,'comprarPaqueteRes'=>$res, 'resEnvios'=>$resEnvios]; 
+
+        return $messageResponse;
     }
 
 

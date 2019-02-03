@@ -45,7 +45,7 @@ class EstafetaServices{
             $largo = $cotizacionRequest->paquetes[0]->largo;
             $ancho = $cotizacionRequest->paquetes[0]->ancho;
             $alto = $cotizacionRequest->paquetes[0]->alto;
-            $peso = $cotizacionRequest->paquetes[0]->peso;
+            $peso = $cotizacionRequest->paquetes[0]->getPesoFinal();
         }else{
             $largo  = '' . self::SOBRE_LARGO;
             $ancho  = '' . self::SOBRE_ANCHO;

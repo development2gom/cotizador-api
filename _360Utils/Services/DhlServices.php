@@ -118,15 +118,15 @@ class DhlServices{
 
     //------------- COTIZACION DE ENVIOS -------------------------
 
-    function cotizarEnvioDocumento(CotizacionRequest $cotiacion){
-        return $this->_cotizarEnvioInterno($cotizacion);
+    function cotizarEnvioDocumento(CotizacionRequest $cotizacionRequest){
+        return $this->_cotizarEnvioInterno($cotizacionRequest);
     }
 
     /**
      * Cotiza el envio de uno o más paquetes
      */
-    function cotizarEnvioPaquete(CotizacionRequest $cotizacion){
-        return $this->_cotizarEnvioInterno($cotizacion);
+    function cotizarEnvioPaquete(CotizacionRequest $cotizacionRequest){
+        return $this->_cotizarEnvioInterno($cotizacionRequest);
     }
 
 
@@ -335,9 +335,9 @@ class DhlServices{
     }
 
     //---------------- COTIZACION DEL ENVIO ---------------------
-    private function _cotizarEnvioInterno(CotizacionRequest $cotizacion){
+    private function _cotizarEnvioInterno(CotizacionRequest $cotizacionRequest){
         
-        $request = $this->getCotizarRequest($cotizacion);
+        $request = $this->getCotizarRequest($cotizacionRequest);
         
         $res = $this->callWebService($request, self::IS_COTIZACION);
         $xml = simplexml_load_string($res);

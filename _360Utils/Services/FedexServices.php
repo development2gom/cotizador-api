@@ -196,14 +196,14 @@ class FedexServices{
 
 
 
-    private function _cotizarEnvio($serviceType, CotizacionRequest $cotizacion, $fecha){
+    private function _cotizarEnvio($serviceType, CotizacionRequest $cotizacionRequest, $fecha){
         //$serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, $servicePacking, $paquetes, $montoSeguro = false
 
         $preferedCurrency = 'MXN';
         $pickUp = 'REGULAR_PICKUP';
 
         //manejar varios paquetes
-        $numeroPaquetes = $cotizacion->paquetesCount();
+        $numeroPaquetes = $cotizacionRequest->paquetesCount();
         
 
         require_once(Yii::getAlias('@app') . '/_360Utils/shipmentCarriers/fedex/fedex-common.php');
@@ -225,7 +225,7 @@ class FedexServices{
         $request['RequestedShipment']['DropoffType']        = $pickUp; // valid values REGULAR_PICKUP, REQUEST_COURIER, ...
         $request['RequestedShipment']['ShipTimestamp']      = $fecha;//date('c');//$cotizacion->fecha;
         $request['RequestedShipment']['ServiceType']        = $serviceType; // valid values STANDARD_OVERNIGHT, PRIORITY_OVERNIGHT, FEDEX_GROUND, ...
-        $request['RequestedShipment']['PackagingType']      = $cotizacion->packingType; // valid values FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
+        $request['RequestedShipment']['PackagingType']      = $cotizacionRequest->packingType; // valid values FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
 
         
         
@@ -234,22 +234,22 @@ class FedexServices{
         $request['RequestedShipment']['RateRequestTypes']   = 'PREFERRED';        
 
         //Seguro de envío
-        if($cotizacion->hasSeguro){
+        if($cotizacionRequest->hasSeguro){
             $request['RequestedShipment']['TotalInsuredValue']=array(
-                'Amount'=>$cotizacion->montoSeguro,
+                'Amount'=>$cotizacionRequest->montoSeguro,
                 'Currency'=>$preferedCurrency
             );
         }
         
 
-        $request['RequestedShipment']['Shipper']    = $this->addShipper($cotizacion->origenCP, $cotizacion->origenCountry);
-        $request['RequestedShipment']['Recipient']  = $this->addRecipient($cotizacion->destinoCP, $cotizacion->destinoCountry);
+        $request['RequestedShipment']['Shipper']    = $this->addShipper($cotizacionRequest->origenCP, $cotizacionRequest->origenCountry);
+        $request['RequestedShipment']['Recipient']  = $this->addRecipient($cotizacionRequest->destinoCP, $cotizacionRequest->destinoCountry);
         //$request['RequestedShipment']['ShippingChargesPayment'] = $this->addShippingChargesPayment();
         $request['RequestedShipment']['PackageCount'] = $numeroPaquetes;
         $request['RequestedShipment']['RequestedPackageLineItems'] = [];
         
         //Agrega los paquetes
-        foreach( $cotizacion->paquetes as $item){
+        foreach( $cotizacionRequest->paquetes as $item){
             $largo = $item->largo;
             $ancho = $item->ancho;
             $alto = $item->alto;
@@ -282,7 +282,7 @@ class FedexServices{
                     }
                 }else{
                     error_log("Notification: " . $response->Notifications->Severity . " Message: " . $response->Notifications->Message . " Code: " . $response->Notifications->Code);
-                    if($not->Code == 200){
+                    if($response->Notifications->Code == 200){
                         error_log("Rating is temporarily unavailable, please try again later.");
                     }
                 }

@@ -17,7 +17,7 @@ class CotizadorPaquete{
     const USE_FEDEX       = true; // Habilita FEDEX
     const USE_UPS         = true; //Habilita UPS
     const USE_ESTAFETA    = true; // Habilita ESTAFETA
-    const USE_DHL         = true;
+    const USE_DHL         = true; //HAbilta DHL
 
 
     

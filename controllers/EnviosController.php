@@ -28,6 +28,7 @@ use app\models\WrkResultadosEnvios;
 use app\_360Utils\CompraSobre;
 use app\_360Utils\Entity\CotizacionRequest;
 use app\_360Utils\Tracking;
+use app\models\MessageResponse;
 
 
 class EnviosController extends Controller{
@@ -278,7 +279,10 @@ class EnviosController extends Controller{
         $envio = WrkEnvios::getEnvio($uddiEnvio);
 
         if($envio->txt_tracking_number){
-            throw new HttpException(500, "Ya existe una guia");
+            //throw new HttpException(500, "Ya existe una guia");
+            $messageResponse = new MessageResponse();
+            $messageResponse->message = "Ya existe una guía para el envío";
+            return $messageResponse;
         }
 
         $origen  = $envio->origen;
@@ -311,9 +315,9 @@ class EnviosController extends Controller{
             $compraPaquete = new CompraPaquete();
             $messageResponse = $compraPaquete->comprarPaquete($compra);
         }else{
-            // implementar sobre
+            //sobre
             $compraSobre = new CompraSobre();
-            $res = $compraSobre->comprarSobre($compra);
+            $messageResponse = $compraSobre->comprarSobre($compra);
         }
 
         //Verifica la respuesta de res

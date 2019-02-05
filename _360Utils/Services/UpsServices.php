@@ -391,7 +391,7 @@ class UpsServices{
             $descError = $responseData['Fault']['detail']['Errors']['ErrorDetail']['PrimaryErrorCode']['Description'];
             error_log("Error con el servicio de UPS: " . $severityError . " " . $codeError . " " . $descError);
 
-            $messageResponse->code = -1;
+            $messageResponse->responseCode = -1;
             $messageResponse->message = "Error con el servicio de UPS: " . $severityError . " " . $codeError . " " . $descError;
 
             return $messageResponse;
@@ -431,7 +431,7 @@ class UpsServices{
             }
         }
         
-        $messageResponse->code = 1;
+        $messageResponse->responseCode = 1;
         $messageResponse->data = $resultado;
         $messageResponse->message = "Compra correcta UPS";
 

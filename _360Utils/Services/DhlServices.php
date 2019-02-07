@@ -12,6 +12,7 @@ use app\_360Utils\shipmentCarriers\dhl\entity\PieceType;
 use app\_360Utils\Entity\CotizacionRequest;
 use app\_360Utils\Entity\TrackingResult;
 use app\_360Utils\Entity\Evento;
+use app\models\MessageResponse;
 
 class DhlServices{
 
@@ -117,15 +118,15 @@ class DhlServices{
 
     //------------- COTIZACION DE ENVIOS -------------------------
 
-    function cotizarEnvioDocumento(CotizacionRequest $cotiacion){
-        return $this->_cotizarEnvioInterno($cotizacion);
+    function cotizarEnvioDocumento(CotizacionRequest $cotizacionRequest){
+        return $this->_cotizarEnvioInterno($cotizacionRequest);
     }
 
     /**
      * Cotiza el envio de uno o más paquetes
      */
-    function cotizarEnvioPaquete(CotizacionRequest $cotizacion){
-        return $this->_cotizarEnvioInterno($cotizacion);
+    function cotizarEnvioPaquete(CotizacionRequest $cotizacionRequest){
+        return $this->_cotizarEnvioInterno($cotizacionRequest);
     }
 
 
@@ -135,7 +136,7 @@ class DhlServices{
         return $this->_comprarEnvioInterno($model, true);
     }
 
-    function comprarEnvioSobre(CompraEnvio $model){
+    function comprarEnvioDocumento(CompraEnvio $model){
         return $this->_comprarEnvioInterno($model, false);
     }
 
@@ -144,6 +145,9 @@ class DhlServices{
     
     private function _comprarEnvioInterno(CompraEnvio $model, $isPaquete){
         
+        $messageResponse = new MessageResponse();
+
+
         $request = $this->createShipmentRequest($model,$isPaquete);
         $res = $this->callWebService($request, self::IS_SHIPMENT);
         $xml = simplexml_load_string($res);
@@ -152,9 +156,23 @@ class DhlServices{
 
         //Error en el request
         if(isset($array['Response']) && isset($array['Response']['Status'])){
-            $errorMsg = $array['Response']['Status']['ActionStatus'];
+            
+            $errorMsg = "";
+            if(is_array( $array['Response']['Status']['ActionStatus'])){
 
-            return null;
+            }else{
+                $errorMsg .= $array['Response']['Status']['ActionStatus'];
+            }
+            
+            $errorMsg .= $array['Response']['Status']['Condition']['ConditionCode'] . " - ";
+            $errorMsg .= $array['Response']['Status']['Condition']['ConditionData'];
+
+            error_log("Error con la peticion de DHL: " . $errorMsg);
+
+            $messageResponse->responseCode = -1;
+            $messageResponse->message = $errorMsg;
+
+            return $messageResponse;
         }
         
 
@@ -172,7 +190,9 @@ class DhlServices{
 
         array_push($resultado,$res);
 
-        return $resultado;
+        $messageResponse->responseCode = 1;
+        $messageResponse->data = $resultado;
+        return $messageResponse;
 
     }
 
@@ -182,7 +202,7 @@ class DhlServices{
     private function createShipmentRequest(CompraEnvio $model, $isPaquete){
         $request = [];
         $request['Request']['ServiceHeader'] = [];
-        $request['Request']['ServiceHeader']['MessageTime'] = date('Y-m-dTH:i:s.uZ');//'2019-01-10T11:28:56.000-08:00';
+        $request['Request']['ServiceHeader']['MessageTime'] = date('c');//'2019-01-10T11:28:56.000-08:00';
         $request['Request']['ServiceHeader']['MessageReference'] = '1234567890123456789012345678901';
         $request['Request']['ServiceHeader']['SiteID'] = self::DHL_SITE_ID;
         $request['Request']['ServiceHeader']['Password'] = self::DHL_PASSWORD;
@@ -231,7 +251,7 @@ class DhlServices{
         $request['Commodity']['CommodityName'] = "cn";
 
         $request['Dutiable'] = [];
-        $request['Dutiable']['DeclaredValue'] = 200;
+        $request['Dutiable']['DeclaredValue'] = 1;
         $request['Dutiable']['DeclaredCurrency'] = "MXN";
         $request['Dutiable']['ScheduleB'] = "3002905110";
         $request['Dutiable']['ExportLicense'] = "D123456";
@@ -242,7 +262,7 @@ class DhlServices{
         $request['Dutiable']['TermsOfTrade'] = "DAP";
 
         $request['Reference'] = [];
-        $request['Reference']['ReferenceID'] = "AM international shipment";
+        $request['Reference']['ReferenceID'] = "envios 360";
         $request['Reference']['ReferenceType'] = "St";
 
         $request['ShipmentDetails'] = [];
@@ -251,19 +271,28 @@ class DhlServices{
 
         $index = 1;
         foreach($model->paquetes as $item){
-            $largo = $item->largo;
-            $ancho = $item->ancho;
-            $alto = $item->alto;
-            $peso = $item->peso;
+            if($isPaquete){
+                $largo = $item->largo;
+                $ancho = $item->ancho;
+                $alto = $item->alto;
+            }else{
+                $largo = 10;
+                $ancho = 20;
+                $alto = 20;
+            }
+            $peso = $item->getPesoFinal();
             array_push($request['ShipmentDetails']['Pieces'], $this->getPieceRequest($index++,$alto,$ancho,$largo,$peso));
         }
+
+        $date = new \DateTime($model->fecha);
+        $fechaEnvio = $date->format('Y-m-d');
 
         $request['ShipmentDetails']['Weight'] = $model->getTotalWeight();
         $request['ShipmentDetails']['WeightUnit'] = "K";
         $request['ShipmentDetails']['GlobalProductCode'] = "P";
         $request['ShipmentDetails']['LocalProductCode'] = "P";
-        $request['ShipmentDetails']['Date'] = $model->fecha;
-        $request['ShipmentDetails']['Contents'] = "AM international shipment contents";
+        $request['ShipmentDetails']['Date'] = $fechaEnvio; //$model->fecha;
+        $request['ShipmentDetails']['Contents'] = $model->txt_contenido; //"AM international shipment contents";
         $request['ShipmentDetails']['DoorTo'] = "DD"; //DD (Door to Door, DA (Door to Airport), AA (Airport to Airport), DC (Door to Door non-Compliant)
         $request['ShipmentDetails']['DimensionUnit'] = "C";
         $request['ShipmentDetails']['InsuredAmount'] = $model->valorSeguro;
@@ -312,9 +341,9 @@ class DhlServices{
     }
 
     //---------------- COTIZACION DEL ENVIO ---------------------
-    private function _cotizarEnvioInterno(CotizacionRequest $cotizacion){
+    private function _cotizarEnvioInterno(CotizacionRequest $cotizacionRequest){
         
-        $request = $this->getCotizarRequest($cotizacion);
+        $request = $this->getCotizarRequest($cotizacionRequest);
         
         $res = $this->callWebService($request, self::IS_COTIZACION);
         $xml = simplexml_load_string($res);
@@ -363,23 +392,24 @@ class DhlServices{
      * Genera el arreglo de la cotizacion
      */
     private function getCotizarRequest(CotizacionRequest $cotizacion){
+
+        $date = new \DateTime($cotizacion->fecha);
+        $fechaEnvio = $date->format('Y-m-d');
+
         $request = [];
         $request['GetQuote'] = [];
 
         $request['GetQuote']['Request'] = [];
 
         $request['GetQuote']['Request']['ServiceHeader'] = [];
-        $request['GetQuote']['Request']['ServiceHeader']['MessageTime'] = date('Y-m-dTH:i:s.uZ');//'2019-01-10T11:28:56.000-08:00';
+        $request['GetQuote']['Request']['ServiceHeader']['MessageTime'] = date('c');//'2019-01-10T11:28:56.000-08:00';
         $request['GetQuote']['Request']['ServiceHeader']['MessageReference'] = '1234567890123456789012345678901';
         $request['GetQuote']['Request']['ServiceHeader']['SiteID'] = self::DHL_SITE_ID;
         $request['GetQuote']['Request']['ServiceHeader']['Password'] = self::DHL_PASSWORD;
-
         $request['GetQuote']['From'] = $this->getAddr($cotizacion->destinoCountry,$cotizacion->origenCP);
-
         $request['GetQuote']['BkgDetails'] = [];
-
         $request['GetQuote']['BkgDetails']['PaymentCountryCode'] = "MX";
-        $request['GetQuote']['BkgDetails']['Date'] = date("Y-m-d") ; //$cotizacion->fecha; //"2019-01-10";
+        $request['GetQuote']['BkgDetails']['Date'] = $fechaEnvio; //date("Y-m-d") ; //$cotizacion->fecha; //"2019-01-10";
         $request['GetQuote']['BkgDetails']['ReadyTime'] = "PT10H21M";
         $request['GetQuote']['BkgDetails']['ReadyTimeGMTOffset'] = "-06:00";
         $request['GetQuote']['BkgDetails']['DimensionUnit'] = "CM";
@@ -392,8 +422,11 @@ class DhlServices{
             $largo = $item->largo;
             $ancho = $item->ancho;
             $alto = $item->alto;
-            $peso = $item->peso;
-            array_push($request['GetQuote']['BkgDetails']['Pieces'], $this->getPiece($index++,$alto,$ancho,$largo,$peso));
+            $peso = $item->getPesoFinal();
+            $pice = $this->getPiece($index++,$alto,$ancho,$largo,$peso);
+            if($pice != null){
+                array_push($request['GetQuote']['BkgDetails']['Pieces'], $pice);
+            }
         }
 
         $request['GetQuote']['BkgDetails']['PaymentAccountNumber'] = 'CASHSIN';
@@ -493,7 +526,8 @@ class DhlServices{
                 $xml = $this->generateValidXmlFromArray($request,'p:DCTRequest',null, $requestType);
                 break;
             case self::IS_SHIPMENT:
-                $xml = $this->generateValidXmlFromArray($request,'req:ShipmentRequest', $requestType);
+                //$array, $node_block='nodes', $node_name='node',$requestType
+                $xml = $this->generateValidXmlFromArray($request,'req:ShipmentRequest', null, $requestType);
                 break;
             case self::IS_TRAKING:
                 $xml = $this->generateValidXmlFromArray($request,'req:KnownTrackingRequest',null, $requestType);
@@ -503,9 +537,12 @@ class DhlServices{
 
         $xml = str_replace("<node>" ,"",$xml);
         $xml = str_replace("</node>" ,"",$xml);
+
+        $xml = str_replace("<>" ,"",$xml);
+        $xml = str_replace("</>" ,"",$xml);
         
 
-        error_log($xml);
+        error_log("DHL XML request: " . $xml);
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_URL, self::DHL_END_POINT);
@@ -514,7 +551,7 @@ class DhlServices{
         curl_setopt($ch, CURLOPT_PORT , 443);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
         $result = curl_exec($ch);
-        error_log($result);
+        error_log("DHL Respuesta del request:  " .  $result);
         
         if (curl_error($ch)){
             return false;
@@ -568,6 +605,9 @@ class DhlServices{
 
         if (is_array($array) || is_object($array)) {
             foreach ($array as $key=>$value) {
+                if($key === null || $key === ''){
+                    continue;
+                }
                 if (is_numeric($key)) {
                     $key = $node_name;
                 }

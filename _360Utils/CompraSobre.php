@@ -7,6 +7,8 @@ use app\_360Utils\Services\FedexServices;
 use app\_360Utils\Services\EstafetaServices;
 use app\_360Utils\Entity\CompraEnvio;
 use yii\web\HttpException;
+use app\models\MessageResponse;
+use app\_360Utils\Services\DhlServices;
 
 
 class CompraSobre{
@@ -26,8 +28,15 @@ class CompraSobre{
                 $estafeta = new EstafetaServices();
                 $res = $estafeta->comprarEnvioDocumento($compra);
                 return $res;
+            case "DHL":
+                $dhl = new DhlServices();
+                $res = $dhl->comprarEnvioDocumento($compra);
+                return $res;
             default:
-                throw new HttpException(500,"Carrier selecconado no implementado " . $compra->carrier );
+                $messageResponse = new MessageResponse();
+                $messageResponse->responseCode = -1;
+                $messageResponse->message = "Carrier selecconado no implementado " . $compra->carrier;
+                return $messageResponse;
         }
     }
 }

@@ -218,7 +218,7 @@ class EnviosController extends Controller{
 
     public function actionGetNacionalesEnvios(){
         $envios = new WrkEnviosSearch();
-        $data = $envios->searchMostrador([]);
+        $data = $envios->searchNacionales([]);
 
         return $data;
     }

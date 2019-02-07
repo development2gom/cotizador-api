@@ -136,7 +136,7 @@ class DhlServices{
         return $this->_comprarEnvioInterno($model, true);
     }
 
-    function comprarEnvioSobre(CompraEnvio $model){
+    function comprarEnvioDocumento(CompraEnvio $model){
         return $this->_comprarEnvioInterno($model, false);
     }
 
@@ -271,9 +271,15 @@ class DhlServices{
 
         $index = 1;
         foreach($model->paquetes as $item){
-            $largo = $item->largo;
-            $ancho = $item->ancho;
-            $alto = $item->alto;
+            if($isPaquete){
+                $largo = $item->largo;
+                $ancho = $item->ancho;
+                $alto = $item->alto;
+            }else{
+                $largo = 10;
+                $ancho = 20;
+                $alto = 20;
+            }
             $peso = $item->getPesoFinal();
             array_push($request['ShipmentDetails']['Pieces'], $this->getPieceRequest($index++,$alto,$ancho,$largo,$peso));
         }
@@ -286,7 +292,7 @@ class DhlServices{
         $request['ShipmentDetails']['GlobalProductCode'] = "P";
         $request['ShipmentDetails']['LocalProductCode'] = "P";
         $request['ShipmentDetails']['Date'] = $fechaEnvio; //$model->fecha;
-        $request['ShipmentDetails']['Contents'] = "AM international shipment contents";
+        $request['ShipmentDetails']['Contents'] = $model->txt_contenido; //"AM international shipment contents";
         $request['ShipmentDetails']['DoorTo'] = "DD"; //DD (Door to Door, DA (Door to Airport), AA (Airport to Airport), DC (Door to Door non-Compliant)
         $request['ShipmentDetails']['DimensionUnit'] = "C";
         $request['ShipmentDetails']['InsuredAmount'] = $model->valorSeguro;

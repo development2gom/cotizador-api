@@ -13,6 +13,8 @@ class CompraEnvio{
     var $carrier;
     var $tipo_servicio;
     var $tipo_empaque;
+    var $txt_contenido = "";
+
     var $origen_cp;
     var $origen_pais;
     var $origen_ciudad;
@@ -32,6 +34,7 @@ class CompraEnvio{
     var $destino_telefono;
     var $destino_compania;
     var $destino_correo;
+    
 
     //Seguro del envío
     var $hasSeguro = false;

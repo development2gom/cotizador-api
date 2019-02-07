@@ -9,6 +9,7 @@ use app\_360Utils\Entity\Cotizacion;
 use app\_360Utils\Entity\CompraEnvio;
 use app\_360Utils\Entity\ResultadoEnvio;
 use app\_360Utils\Entity\CotizacionRequest;
+use app\models\MessageResponse;
 
 class EstafetaServices{
 
@@ -106,8 +107,8 @@ class EstafetaServices{
     
             $cotizacion = new Cotizacion();
             $cotizacion->provider = "Estafeta";
-            $cotizacion->price = $item->CostoTotal;
-            $cotizacion->tax = 0;
+            $cotizacion->price = $item->CostoTotal * 1.16; //Se agrega el 16 % de iva por solicitud del cliente
+            $cotizacion->tax = $item->CostoTotal * 0.16; //Se agrega el 16 % de iva por solicitud del cliente;
             $cotizacion->serviceType = $item->DescripcionServicio;
             $cotizacion->deliveryDate = "";
             $cotizacion->currency = "MXN";
@@ -126,11 +127,19 @@ class EstafetaServices{
     }
 
     function comprarEnvioPaquete(CompraEnvio $model){
-        throw new HttpException(500,"Compra envio paquete Estafeta no implementado");
+        $messageResponse = new MessageResponse();
+        $messageResponse->responseCode = -1;
+        $messageResponse->message = "Metodo no implementadio de Estafeta: comprar envio paquete";
+
+        return $messageResponse;
     }
 
     function comprarEnvioDocumento($compra){
-        throw new HttpException(500,"Compra envio documento Estafeta no implementado");
+        $messageResponse = new MessageResponse();
+        $messageResponse->responseCode = -1;
+        $messageResponse->message = "Metodo no implementadio de Estafeta: comprar envio sobre";
+
+        return $messageResponse;
     }
 }
 ?>

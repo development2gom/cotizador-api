@@ -510,46 +510,47 @@ class UpsServices{
         }
 
 
+        // Cotizacion correcta
    
-            $cotizacion = new Cotizacion();
+        $cotizacion = new Cotizacion();
 
-            $cotizacion->provider               = "UPS";
-            $cotizacion->price                  = $responseData["RateResponse"]["RatedShipment"]["TotalCharges"]["MonetaryValue"];
-            $cotizacion->tax                    = 0;
-            $cotizacion->serviceType            = $responseData["RateResponse"]["RatedShipment"]["Service"]["Code"] . " " . $responseData["RateResponse"]["RatedShipment"]["Service"]["Description"];
-            $cotizacion->deliveryDate           = "";
-            $cotizacion->currency               = $responseData["RateResponse"]["RatedShipment"]["TotalCharges"]["CurrencyCode"];
-            $cotizacion->data                   = $responseData;
-            $cotizacion->servicePacking         = "PT_UPSLETTER";
+        $cotizacion->provider               = "UPS";
+        $cotizacion->price                  = $responseData["RateResponse"]["RatedShipment"]["TotalCharges"]["MonetaryValue"];
+        $cotizacion->tax                    = 0;
+        $cotizacion->serviceType            = $responseData["RateResponse"]["RatedShipment"]["Service"]["Code"] . " " . $responseData["RateResponse"]["RatedShipment"]["Service"]["Description"];
+        $cotizacion->deliveryDate           = "";
+        $cotizacion->currency               = $responseData["RateResponse"]["RatedShipment"]["TotalCharges"]["CurrencyCode"];
+        $cotizacion->data                   = $responseData;
+        $cotizacion->servicePacking         = "PT_UPSLETTER";
 
 
             
 
 
-            //Tiempo de entrega UPS
-            if(isset($responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"])){
-                if(isset($responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["BusinessDaysInTransit"])){
-                    $cotizacion->businessDaysInTransit  = $responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["BusinessDaysInTransit"];
+        //Tiempo de entrega UPS
+        if(isset($responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"])){
+            if(isset($responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["BusinessDaysInTransit"])){
+                $cotizacion->businessDaysInTransit  = $responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["BusinessDaysInTransit"];
 
-                    $cotizacion->deliveryDateStr = $cotizacion->businessDaysInTransit + " días";
-                    
-                }
-                if(isset($responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["DeliveryByTime"]) && 
-                    $responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["DeliveryByTime"] != null){
-                    $cotizacion->deliveryByTime  = $responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["DeliveryByTime"];
-                }
+                $cotizacion->deliveryDateStr = $cotizacion->businessDaysInTransit + " días";
+                
             }
-            
+            if(isset($responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["DeliveryByTime"]) && 
+                $responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["DeliveryByTime"] != null){
+                $cotizacion->deliveryByTime  = $responseData["RateResponse"]["RatedShipment"]["GuaranteedDelivery"]["DeliveryByTime"];
+            }
+        }
+        
 
-            //Alertas
-            $alertas = $responseData["RateResponse"]["RatedShipment"]["RatedShipmentAlert"];
-            if(is_array($alertas) && isset($alertas['Code']) ){
-                $cotizacion->addAlert($alertas["Code"],$alertas["Description"]);
-            }else{
-                foreach($alertas as $alert){
-                    $cotizacion->addAlert($alert["Code"],$alert["Description"]);
-                }
+        //Alertas
+        $alertas = $responseData["RateResponse"]["RatedShipment"]["RatedShipmentAlert"];
+        if(is_array($alertas) && isset($alertas['Code']) ){
+            $cotizacion->addAlert($alertas["Code"],$alertas["Description"]);
+        }else{
+            foreach($alertas as $alert){
+                $cotizacion->addAlert($alert["Code"],$alert["Description"]);
             }
+        }
 
        
         

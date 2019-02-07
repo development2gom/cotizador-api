@@ -33,7 +33,10 @@ class CompraPaquete{
                 $res = $dhl->comprarEnvioPaquete($compra);
                 return $res;
             default:
-                throw new HttpException(500,"Carrier selecconado no implementado " . $compra->carrier );
+                $messageResponse = new MessageResponse();
+                $messageResponse->responseCode = -1;
+                $messageResponse->message = "Carrier selecconado no implementado " . $compra->carrier;
+                return $messageResponse;
         }
     }
 }

@@ -49,13 +49,13 @@ class CotizadorPaquete{
         // UTILIZA USE_DHL ---------------------------------
         if(self::USE_DHL){
             try{
-                //UPS no maneja seguro en el envio
-                if(!$cotizacionRequest->hasSeguro){
+                //DHL si maneja seguro en el envio
+                //if(!$cotizacionRequest->hasSeguro){
                     $res = $this->cotizaPaqueteDHL($cotizacionRequest);
                     if($res != null){
                         $data = array_merge($data, $res);
                     }
-                }
+                //}
             } catch(\Exception $e){
                 error_log("Excepcion cotizar DHL: " . $e->getMessage());
                 $errors[] = "Error al recuperar los datos de DHL";

@@ -185,6 +185,42 @@ class EnviosController extends Controller{
         }
     }
 
+
+
+
+    public function actionActualizarEnvioContenido(){
+        $request = Yii::$app->request;
+        $params = $request->bodyParams;
+
+        $cliente = null;
+       
+        $uddiEnvio = $request->getBodyParam("uddi_envio");
+        $txtContenido = $request->getBodyParam("txt_contenido");
+
+        
+        $envio = WrkEnvios::getEnvio($uddiEnvio);
+
+        $envio->txt_contenido = $txtContenido;
+        
+        $messageResponse = new MessageResponse();
+
+        if($envio->save()){
+            $messageResponse->responseCode = 1;
+            $messageResponse->message = "Envío actualizado: contenido del paquete";
+            $messageResponse->data = $envio;
+        }else{
+            $messageResponse->responseCode = -1;
+            $messageResponse->message = "Error al actualizar el envío: " . json_encode($envio->errors());
+            //$messageResponse->data = $envio;
+        }
+
+        
+        return $messageResponse;
+    }
+
+
+
+
     // Recupera todos los envios
     public function actionIndex(){
         $envios = new WrkEnviosSearch();
@@ -321,7 +357,7 @@ class EnviosController extends Controller{
         }
 
         //Verifica la respuesta de res
-        if($messageResponse->responseCode < 1){
+        if($messageResponse->responseCode < 0){
             return $messageResponse;
         }
 
@@ -367,31 +403,33 @@ class EnviosController extends Controller{
      */
     private function createCompraEnvio(WrkEnvios $envio,$origen , $destino){
         $compra = new CompraEnvio();
-        $compra->servicio = $envio->proveedor->uddi;
-        $compra->tipo_servicio = $envio->txt_tipo;
-        $compra->carrier = $envio->proveedor->txt_nombre_proveedor;
+        $compra->servicio           = $envio->proveedor->uddi;
+        $compra->tipo_servicio      = $envio->txt_tipo;
+        $compra->carrier            = $envio->proveedor->txt_nombre_proveedor;
+        $compra->txt_contenido      = $envio->txt_contenido;
         
-        $compra->origen_cp = $origen->num_codigo_postal;
-        $compra->origen_pais = $origen->txt_pais;
-        $compra->origen_ciudad = $origen->txt_estado;
-        $compra->origen_estado = $origen->txt_estado;
-        $compra->origen_direccion = $origen->direccionCompleta;
-        $compra->origen_nombre_persona = $origen->txt_nombre;
-        $compra->origen_telefono = $origen->num_telefono;
-        $compra->origen_compania = $origen->txt_empresa;
+        $compra->origen_cp              = $origen->num_codigo_postal;
+        $compra->origen_pais            = $origen->txt_pais;
+        $compra->origen_ciudad          = $origen->txt_estado;
+        $compra->origen_estado          = $origen->txt_estado;
+        $compra->origen_direccion       = $origen->direccionCompleta;
+        $compra->origen_nombre_persona  = $origen->txt_nombre;
+        $compra->origen_telefono        = $origen->num_telefono;
+        $compra->origen_compania        = $origen->txt_empresa;
 
-        $compra->destino_cp = $destino->num_codigo_postal;
-        $compra->destino_pais = $destino->txt_pais;
-        $compra->destino_ciudad = $destino->txt_estado;
-        $compra->destino_estado = $destino->txt_estado;
-        $compra->destino_direccion = $destino->direccionCompleta;
+        $compra->destino_cp             = $destino->num_codigo_postal;
+        $compra->destino_pais           = $destino->txt_pais;
+        $compra->destino_ciudad         = $destino->txt_estado;
+        $compra->destino_estado         = $destino->txt_estado;
+        $compra->destino_direccion      = $destino->direccionCompleta;
         $compra->destino_nombre_persona = $destino->txt_nombre;
-        $compra->destino_telefono = $destino->num_telefono;
-        $compra->destino_compania = $destino->txt_empresa;
+        $compra->destino_telefono       = $destino->num_telefono;
+        $compra->destino_compania       = $destino->txt_empresa;
 
-        $compra->fecha = $envio->fch_recoleccion;
+        $compra->fecha                  = $envio->fch_recoleccion;
 
-        $compra->hasSeguro = $envio->b_asegurado;
+        $compra->hasSeguro              = $envio->b_asegurado;
+
         if($envio->b_asegurado){
             $compra->valorSeguro = $envio->num_monto_seguro;
         }
@@ -490,9 +528,5 @@ class EnviosController extends Controller{
         }
 
     }
-
-  
-
-  
 
 }

@@ -19,6 +19,17 @@ class FacturaRequest{
 	public $valorUnitario;
     public $importe;
     public $usoCFDIReceptor;
+    public $cp_from;
+    public $country_code_from;
+    public $cp_to;
+    public $country_code_to;
+    public $tipo_paquete;
+    public $dimensiones_paquete;
+    public $dimensiones_sobre;
+    public $fch_recoleccion;
+    public $num_monto_seguro;
+    public $b_asegurado;
+
 
     public function isValid(){
         return true;
@@ -41,7 +52,8 @@ class FacturaRequest{
 			"unidad"            =>$this->unidad,
 			"descripcion"       =>$this->descripcion,
 			"valorUnitario"     =>$this->valorUnitario,
-            "importe"           =>$this->importe
+            "importe"           =>$this->importe,
+            
             
         ];
         

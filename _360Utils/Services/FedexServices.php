@@ -26,7 +26,8 @@ class FedexServices{
 	const FEDEX_SHIP_ACCOUNT    = '510088000';
 	const FEDEX_BILL_ACCOUNT    = '510088000';
 	const FEDEX_LOCATION_ID     = 'PLBA';
-	const FEDEX_METER           = '119037066';
+    const FEDEX_METER           = '119037066';
+    const FEDEX_DUTY_ACCOUNT    = '510088000';
 
     const FEDEX_CUSTOMER_REF    = '794653027330';
 
@@ -112,6 +113,7 @@ class FedexServices{
 
     //------------- ENVIOS --------------------------
     function disponibilidadDocumento(CotizacionRequest $cotizacion, $fecha){
+        error_log("FEDEX: disponibilidadDocumento");
         //Corresponde a un documento
         $cotizacion->packingType = 'FEDEX_ENVELOPE';
         return $this->disponibilidad($cotizacion,$fecha );
@@ -119,6 +121,7 @@ class FedexServices{
 
 
     function disponibilidadPaquete(CotizacionRequest $cotizacion,$fecha){
+        error_log("FEDEX: disponibilidadPaquete");
         //Corresponde a un paquete
         $cotizacion->packingType = 'YOUR_PACKAGING';
         return $this->disponibilidad($cotizacion ,$fecha);
@@ -183,12 +186,17 @@ class FedexServices{
 
 
     function cotizarEnvioDocumento($serviceType, CotizacionRequest $cotizacion,$fecha){
+
+        error_log("FEDEX: cotizarEnvioDocumento " . $serviceType);
+
         //Cotiza un envio de documento
         $cotizacion->packingType = 'FEDEX_ENVELOPE';
         return $this->_cotizarEnvio($serviceType, $cotizacion,$fecha );
     }
 
     function cotizarEnvioPaquete($serviceType, CotizacionRequest $cotizacion,$fecha){
+        error_log("FEDEX: cotizarEnvioPaquete " . $serviceType);
+
         //Cotiza un envio de documento
         $cotizacion->packingType = 'YOUR_PACKAGING';
         return $this->_cotizarEnvio($serviceType, $cotizacion, $fecha );
@@ -197,8 +205,7 @@ class FedexServices{
 
 
     private function _cotizarEnvio($serviceType, CotizacionRequest $cotizacionRequest, $fecha){
-        //$serviceType, $origenCP,$origenCountry,$destinoCP,$destinoCountry,$fecha, $servicePacking, $paquetes, $montoSeguro = false
-
+        
         $preferedCurrency = 'MXN';
         $pickUp = 'REGULAR_PICKUP';
 
@@ -419,7 +426,7 @@ class FedexServices{
 
         $resultados = [];
 
-
+        $model->cantidadPiezasUnitarias = 1;
         
 
         foreach($model->paquetes as $item){
@@ -428,11 +435,18 @@ class FedexServices{
             $ancho = $item->ancho;
             $alto = $item->alto;
 
+        
             //Create request
             $request = $this->createRequest($model,$peso, $largo,$ancho,$alto, $preferedCurrency, $pickUp, $servicePacking,$model->fecha, $model->valorSeguro ,$MasterTrackingId);
 
             //Realiza el envio
             $resultadoEnvio = $this->realizaEnvioCompra($model,$request,$servicePacking);
+            if($resultadoEnvio->isError){
+                error_log($resultadoEnvio->errorMessage);
+                
+            }
+
+
             //Toma el $MasterTrackingId del primer envio para enviarlo en los subsecuentes
             if($MasterTrackingId == null && $resultadoEnvio != null && $resultadoEnvio->isError == false){
                 $MasterTrackingId = $resultadoEnvio->envioCode;
@@ -457,7 +471,7 @@ class FedexServices{
      * En caso de ser un envío multiple se debe enviar:
      *  MasterTrackingId - Este se obtiene despues de enviar el primer paquete
      */
-    private function createRequest($model,$peso, $largo,$ancho,$alto, $preferedCurrency, $pickUp, $servicePacking, $fecha, $montoSeguro,  $MasterTrackingId = null){
+    private function createRequest(CompraEnvio $model,$peso, $largo,$ancho,$alto, $preferedCurrency, $pickUp, $servicePacking, $fecha, $montoSeguro,  $MasterTrackingId = null){
         $request = $this->configClientRequest();
 
         $request['TransactionDetail'] = array('CustomerTransactionId' => '*** Express International Shipping Request using PHP ***');
@@ -472,9 +486,26 @@ class FedexServices{
             'DropoffType' => $pickUp, // valid values REGULAR_PICKUP, REQUEST_COURIER, DROP_BOX, BUSINESS_SERVICE_CENTER and STATION
             'ServiceType' => $model->tipo_servicio, // valid values STANDARD_OVERNIGHT, PRIORITY_OVERNIGHT, FEDEX_GROUND, ...
             'PackagingType' => $servicePacking, // valid values FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
-            //'TotalInsuredValue' => $montoSeguro, //Valor del seguro
-            //Seguro de envío
         ];
+
+        // En caso de requerir un seguro
+        //Manejo del seguro
+        if($montoSeguro != null && $montoSeguro > 0 ){
+            $request['RequestedShipment']['TotalInsuredValue']=array(
+                'Currency'=>"NMP", //$preferedCurrency,
+                'Amount'=>$montoSeguro
+            );
+        }
+
+
+        
+
+        /*
+        $request['RequestedShipment']['ManifestDetail'] = [];
+        $request['RequestedShipment']['ManifestDetail']['annotation'] = [
+            'documentation' => $model->txt_contenido
+        ];
+      */
 
 
         //TODO: ns:ShipmentManifestDetail
@@ -484,13 +515,7 @@ class FedexServices{
         //     </xs:annotation>
         //   </xs:element>
 
-        //Manejo del seguro
-        if($montoSeguro != null && $montoSeguro > 0 ){
-            $request['RequestedShipment']['TotalInsuredValue']=array(
-                'Currency'=>"NMP", //$preferedCurrency,
-                'Amount'=>$montoSeguro
-            );
-        }
+        
             
         $request['RequestedShipment']['Recipient'] = $this->addRecipient(
                 $model->destino_cp,
@@ -517,7 +542,11 @@ class FedexServices{
 
         $request['RequestedShipment']['ShippingChargesPayment'] = $this->addShippingChargesPayment();
 
-            //'CustomsClearanceDetail' => addCustomClearanceDetail(),                                                                                                       
+        //Si es envío internacional se requere custom Clearance Details
+        if($model->isEnvioInternacional()){
+            $request['RequestedShipment']['CustomsClearanceDetail'] = $this->addCustomClearanceDetail($model, $preferedCurrency);
+        } 
+
         $request['RequestedShipment']['LabelSpecification'] = $this->addLabelSpecification();
         $request['RequestedShipment']['CustomerSpecifiedDetail'] = ['MaskedData'=> 'SHIPPER_ACCOUNT_NUMBER'];
        
@@ -546,6 +575,8 @@ class FedexServices{
         return $request;
     }
 
+
+   
 
     /**
      * Metodo que realiza el envío de un paquete (Ya la compra)
@@ -684,6 +715,68 @@ class FedexServices{
         return $request;
     }
 
+
+    function addCustomClearanceDetail(CompraEnvio $model, $preferdCurrency){
+        //https://www.fedex.com/templates/components/apps/wpor/secure/downloads/pdf/201507/FedEx_WebServices_ShipService_WSDLGuide_v2015.pdf
+        $customerClearanceDetail = array
+        (
+            'DutiesPayment' => array
+            (
+                'PaymentType' => 'SENDER', // valid values RECIPIENT, SENDER and THIRD_PARTY
+                'Payor' => array
+                (
+                    'ResponsibleParty' => array
+                    (
+                        'AccountNumber' => self::FEDEX_DUTY_ACCOUNT,
+                        'Contact' => null,
+                        'Address' => array
+                        (
+                            'CountryCode' => 'MX'
+                        )
+                    )
+                )
+            ),
+            'DocumentContent' => 'NON_DOCUMENTS',
+            'CustomsValue' => array
+            (
+                'Currency' => $preferdCurrency, 
+                'Amount' => $model->getValorTotal()
+            ),
+            'Commodities' => array
+            (
+                '0' => array
+                (
+                    'NumberOfPieces' => 1, // Required. The total number of packages within the shipment that contain this commodity (can be  less than or equal to PackageCount).
+                    'Description' => $model->txt_contenido , //'Books',
+                    'CountryOfManufacture' => 'MX',
+                    'Weight' => array
+                    (
+                        'Units' => 'KG', 
+                        'Value' => $model->getTotalWeight()
+                    ),
+                    'Quantity' => $model->cantidadPiezasUnitarias, //Total quantity of an individual commodity within the shipment (used in conjunction with QuantityUnits).
+                    'QuantityUnits' => 'EA', //EA = each, DZ dozen
+                    'UnitPrice' => array
+                    (
+                        'Currency' => $preferdCurrency, 
+                        'Amount' => $model->valorUnitario // Required. Customs value for each commodity in the shipment.
+                    ),
+                    // 'CustomsValue' => array
+                    // (
+                    //     'Currency' => $preferdCurrency, 
+                    //     'Amount' => 400.000000
+                    // )
+                )
+            ),
+            'ExportDetail' => array
+            (
+                'B13AFilingOption' => 'NOT_REQUIRED'
+            )
+        );
+        return $customerClearanceDetail;
+    } // end of function addCustomClearanceDetail
+
+
     private function addShipper($cp, $countryCode , $city=null, $stateProvinceCode=null){
 
         $shipper = array(
@@ -776,7 +869,7 @@ class FedexServices{
             'PaymentType' => 'SENDER', // valid values RECIPIENT, SENDER and THIRD_PARTY
             'Payor' => [
                 'ResponsibleParty' => [
-                    'AccountNumber' => getProperty('billaccount'),
+                    'AccountNumber' => self::FEDEX_BILL_ACCOUNT,
                     'CountryCode' => 'MX'
                 ]
             ]

@@ -51,11 +51,11 @@ class WrkEnvios extends \yii\db\ActiveRecord
     {
         return [
             
-            [['id_origen', 'id_destino', 'id_proveedor', 'id_pago', 'id_cliente', 'id_tipo_empaque', 'b_habilitado','b_requiere_recoleccion'], 'integer'],
+            [['id_origen', 'id_destino', 'id_proveedor', 'id_pago', 'id_cliente', 'id_tipo_empaque', 'b_habilitado','b_requiere_recoleccion','num_unidades','num_precio_unidad'], 'integer'],
             [['id_tipo_empaque', 'id_destino', 'id_origen', 'id_proveedor','fch_recoleccion','b_requiere_recoleccion'], 'required'],
             [['num_costo_envio', 'num_impuesto', 'num_subtotal'], 'number'],
             [['txt_folio', 'txt_tipo'], 'string', 'max' => 50],
-            [['txt_contenido'], 'string', 'max' => 500],
+            [['txt_contenido'], 'string', 'max' => 400],
             [['txt_currency'], 'string', 'max' => 20],
             [['uddi'], 'string', 'max' => 100],
             [['txt_currency','fch_recoleccion','num_monto_seguro','b_asegurado'], 'safe'],

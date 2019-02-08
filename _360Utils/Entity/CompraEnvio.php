@@ -34,6 +34,10 @@ class CompraEnvio{
     var $destino_telefono;
     var $destino_compania;
     var $destino_correo;
+
+    // para envios internacionales
+    var $valorUnitario = 0.0;
+    var $cantidadPiezasUnitarias = 0;
     
 
     //Seguro del envío
@@ -43,6 +47,14 @@ class CompraEnvio{
     var  $fecha = "2019-01-15";
 
     var $paquetes = [];
+
+    function isEnvioInternacional(){
+        return strtoupper($this->origen_pais) == "MX" && strtoupper($this->destino_pais) != "MX";
+    }
+
+    function getValorTotal(){
+        return $this->valorUnitario * $this->cantidadPiezasUnitarias;
+    }
 
     function addPaquete(Paquete $paquete){
         array_push($this->paquetes,$paquete);

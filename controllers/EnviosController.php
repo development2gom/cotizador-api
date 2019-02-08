@@ -194,13 +194,16 @@ class EnviosController extends Controller{
 
         $cliente = null;
        
-        $uddiEnvio = $request->getBodyParam("uddi_envio");
-        $txtContenido = $request->getBodyParam("txt_contenido");
-
+        $uddiEnvio          = $request->getBodyParam("uddi_envio");
+        $txtContenido       = $request->getBodyParam("txt_contenido");
+        $numUnidades        = $request->getBodyParam("num_unidades");
+        $numPrecioUnitario  = $request->getBodyParam("num_precio_unitario");
         
         $envio = WrkEnvios::getEnvio($uddiEnvio);
 
-        $envio->txt_contenido = $txtContenido;
+        $envio->txt_contenido       = $txtContenido;
+        $envio->num_unidades        = $numUnidades;
+        $envio->num_precio_unidad   = $numPrecioUnitario;
         
         $messageResponse = new MessageResponse();
 
@@ -433,6 +436,10 @@ class EnviosController extends Controller{
         if($envio->b_asegurado){
             $compra->valorSeguro = $envio->num_monto_seguro;
         }
+
+        $compra->valorUnitario = $envio->num_precio_unidad;
+        $compra->cantidadPiezasUnitarias = $envio->num_unidades;
+
 
         return $compra;
     }

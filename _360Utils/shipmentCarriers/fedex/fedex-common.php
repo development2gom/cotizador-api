@@ -13,10 +13,10 @@ function printSuccess($client, $response) {
 
 function printReply($client, $response){
 	$highestSeverity=$response->HighestSeverity;
-	if($highestSeverity=="SUCCESS"){echo '<h2>The transaction was successful.</h2>';}
-	if($highestSeverity=="WARNING"){echo '<h2>The transaction returned a warning.</h2>';}
-	if($highestSeverity=="ERROR"){echo '<h2>The transaction returned an Error.</h2>';}
-	if($highestSeverity=="FAILURE"){echo '<h2>The transaction returned a Failure.</h2>';}
+	if($highestSeverity=="SUCCESS"){error_log( '<h2>FEDEX: The transaction was successful.</h2>');}
+	if($highestSeverity=="WARNING"){error_log( '<h2>FEDEX: The transaction returned a warning.</h2>');}
+	if($highestSeverity=="ERROR"){error_log( '<h2>FEDEX: The transaction returned an Error.</h2>');}
+	if($highestSeverity=="FAILURE"){error_log( '<h2>FEDEX: The transaction returned a Failure.</h2>');}
 	echo "\n";
 	printNotifications($response -> Notifications);
 	printRequestResponse($client, $response);
@@ -70,6 +70,7 @@ function writeToLog($client){
  * This section provides a convenient place to setup many commonly used variables
  * needed for the php sample code to function.
  */
+/*
 function getProperty($var){
 
   if($var == 'key') Return ' VY3a8M7siRPxvdOf'; 
@@ -209,6 +210,7 @@ function getProperty($var){
 			)
 	);
 }
+*/
 
 function setEndpoint($var){
 	if($var == 'changeEndpoint') Return false;

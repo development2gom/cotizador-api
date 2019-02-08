@@ -435,7 +435,7 @@ class WrkEnvios extends \yii\db\ActiveRecord
         $monto = 0;
 
         foreach ($this->extras as $item){
-            $monto += $item->num_precio * $item->num_unidades;
+            $monto += $item->num_unidades * $item->num_precio;
         }
 
         return $monto;

@@ -296,6 +296,7 @@ class WrkEnvios extends \yii\db\ActiveRecord
         $fields[] = "puedeFacturar";
         $fields[] = "facturaXmlUrl";
         $fields[] = "facturaPdfUrl";
+        $fields[] = "tipoEnvio";
         
         
         return $fields;
@@ -465,5 +466,16 @@ class WrkEnvios extends \yii\db\ActiveRecord
             return false;
         }
         return true;
+    }
+
+    public function getTipoEnvio(){
+        if($this->origen->txt_pais == "MX" && $this->destino->txt_pais == "MX"){
+            return "NAL";
+        }else if($this->origen->txt_pais == "MX" && $this->destino->txt_pais != "MX"){
+            return "INT_EXT";
+        }else if($this->origen->txt_pais != "MX" && $this->destino->txt_pais == "MX"){
+            return "INT_IMP";
+        }
+        return "INT_INT";
     }
 }

@@ -6,6 +6,8 @@ use yii\rest\Controller;
 use app\_360Utils\APIResponses\DataBarResponse;
 use app\_360Utils\APIResponses\DataBar;
 use app\models\WrkEnvios;
+use app\models\MessageResponse;
+use app\_360Utils\APIResponses\ListResponse;
 
 
 class ReportServiceController extends ServicesBaseController{
@@ -125,6 +127,60 @@ class ReportServiceController extends ServicesBaseController{
         return $response;
     }
 
+    function actionGetEnviosSinFactura($fchInicio = null){
+        if($fchInicio == null){
+            $fchInicio = date("Y-m-d");
+        }
+
+
+        $envios = WrkEnvios::find()
+            ->joinWith('proveedor')
+            ->where(['IS NOT', 'txt_tracking_number', null])
+            ->andWhere(['IS', 'txt_identificador_proveedor' , null])
+          //  ->andWhere(['b_facturado'=>0,'date(fch_creacion)'=>$fchInicio])
+            ->all();
+
+        $response = new ListResponse();
+        $response->operation = "Get envíos sin facturas";
+        $response->message = "Success";
+        $response->code = self::RESPONSE_SUCCESS;
+        $response->results = $envios;
+        $response->count = count($envios);
+
+        return $response;
+
+    }
+
+    function actionGetFacturas360($fchInicio = null, $fchFin = null ){
+
+        if($fchInicio == null){
+            $fchInicio = date("Y-m-d");
+        }
+
+        if($fchFin == null){
+            $fchFin = date("Y-m-d");
+        }
+
+
+        $envios = WrkEnvios::find()
+            ->joinWith('proveedor')
+            ->where(['between', 'fch_creacion', $fchInicio . ' 00:00:00', $fchFin . ' 23:59:59'])
+            ->andWhere(['IS NOT', 'b_factura_360', null]) 
+            ->all();
+
+        $response = new ListResponse();
+        $response->operation = "Get facturas 360";
+        $response->message = "Success";
+        $response->code = self::RESPONSE_SUCCESS;
+        $response->results = $envios;
+        $response->count = count($envios);
+
+        return $response;
+        
+    }
+
+
+    
 
     /// ---------------------------------------- SEGURIDAD DEL API -------------------------------------------------
     public function behaviors()
@@ -142,6 +198,10 @@ class ReportServiceController extends ServicesBaseController{
         ];
         return $behaviors;
     }
+
+
+
+   
 
     public function init()
     {

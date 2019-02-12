@@ -836,7 +836,150 @@ class ApiController extends Controller
             $envio->save();
         }        
 
-        return true;
+        return true; 
+    }
+
+
+    /**
+     * Funcion 
+     */
+    public function actionGenerarFacturaConsolidado(){
+        $messageResponse = new MessageResponse();
+
+        $request = Yii::$app->request;
+        
+        $fch = $request->getBodyParam('fch');
+        $tipo = $request->getBodyParam('tipo');
+
+        if($fch == null){
+            $messageResponse->responseCode = -3;
+            $messageResponse->message = "La fecha es nula";
+            return $messageResponse;
+        }
+
+        if($tipo == null){
+            $messageResponse->responseCode = -4;
+            $messageResponse->message = "El tipo es nulo";
+            return $messageResponse;
+        }
+
+        $nombreServicio = 'Envio de paqueteria ';
+        switch($tipo){
+            case "NAL":
+            $nombreServicio .= "Nacional";
+            break;
+            case "INT_EXT":
+            $nombreServicio .= "Internacional exportación";
+            break;
+            case "INT_IMP":
+            $nombreServicio .= "Internacional importación";
+            break;
+            case "INT_INT":
+            $nombreServicio .= "Internacional internacional";
+            break;
+            default:
+            $messageResponse->responseCode = -1;
+            $messageResponse->message = "El tipo de servicio es inválido";
+            return $messageResponse;
+        }
+
+       
+
+        $envio =  WrkEnvios::find()
+            ->joinWith('proveedor')
+            ->where(['IS NOT', 'txt_tracking_number', null])
+            ->andWhere(['IS', 'txt_identificador_proveedor' , null])
+            ->andWhere(['b_facturado'=>0,'date(fch_creacion)'=>$fch])
+            ->all();
+
+
+
+        $enviosList = [];
+        $montoEnvios = 0;
+        $montoIva = 0;
+        $montoExtras = 0;
+        //Selecciona unicamente los envios del tipo
+        //Si no tiene folio de pago ni txt_folio, es que no se ha pagado
+        foreach($envio as $item){
+            if($item->tipoEnvio == $tipo && $item->b_facturado == 0){
+                $enviosList[] = $item;
+                $montoEnvios  += $item->num_costo_envio;
+                $montoIva     += $item->num_impuesto;
+
+                //Busca los extras
+                $montoExtras = RelEnvioExtras::find()->where(['id_envio'=>$item->id_envio])->sum('num_precio');
+            }
+        }
+
+        if(count($enviosList) == 0){
+            $messageResponse->responseCode = -5;
+            $messageResponse->message = "No hay envíos para facturar";
+            return $messageResponse;
+        }
+    
+
+        // ---------------- Monto del envio ---------------------
+        $montoTotal = $montoEnvios + $montoIva + $montoExtras;
+
+        $RFC_360     = "dgo130923fy0";
+        $NOMBRE_360  = "Envíos 360 de México, SA de CV";
+        $uuidFactura = uniqid("CONS_");
+   
+        
+        //Pone los datos de la factura
+        $facturaRequest = new FacturaRequest();
+
+        $facturaRequest->useSandBox        = true;
+        $facturaRequest->transaccion       = $uuidFactura;
+        $facturaRequest->formaPago         = "04";
+        $facturaRequest->condicionesPago   = 'Contado';
+        $facturaRequest->subTotal          = $montoTotal;
+        $facturaRequest->total             = $montoTotal;
+        $facturaRequest->rfcReceptor       = $RFC_360;
+        $facturaRequest->nombreReceptor    = $NOMBRE_360;
+        $facturaRequest->claveProdServicio = '84101600';
+        $facturaRequest->cantidad          = count($enviosList);
+        $facturaRequest->claveUnidad       = 'C62'; 
+        $facturaRequest->unidad            = 'Uno';
+        $facturaRequest->descripcion       = $nombreServicio;
+        $facturaRequest->valorUnitario     = $montoTotal;
+        $facturaRequest->importe           = $montoTotal;
+        $facturaRequest->usoCFDIReceptor   = 'G03';
+
+        $factura = new Pagos();
+        $facturaGenerar = $factura->generarFactura2($facturaRequest);
+
+        if($facturaGenerar->error){
+            $messageResponse->responseCode = -6;
+            $messageResponse->message = $facturaGenerar->message;
+            return $messageResponse; 
+        }
+        
+        if(isset($facturaGenerar->pdf) && isset($facturaGenerar->xml)){
+        
+            foreach($enviosList as $item){
+                $this->validarDirectorio("facturas/envios_360");
+                $this->validarDirectorio("facturas/envios_360" . "/" . $item->uddi);
+
+                $pdf = base64_decode($facturaGenerar->pdf);
+                $xml = base64_decode($facturaGenerar->xml);
+
+                file_put_contents("facturas/envios_360/" . $item->uddi . "/factura.pdf", $pdf);
+                file_put_contents("facturas/envios_360/" . $item->uddi . "/factura.xml", $xml);
+
+                $item->b_facturado   = 1;
+                $item->b_factura_360 = $uuidFactura;
+                $item->save();
+            }
+
+            $messageResponse->responseCode = 1;
+            $messageResponse->message = "Facturado correctamente, factura: " . $uuidFactura;
+            return $messageResponse; 
+        }  else{
+            $messageResponse->responseCode = -2;
+            $messageResponse->message = "Error al genrar las facturas";
+            return $messageResponse; 
+        }      
 
         
     }

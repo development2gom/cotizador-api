@@ -8,6 +8,7 @@ use app\_360Utils\APIResponses\DataBar;
 use app\models\WrkEnvios;
 use app\models\MessageResponse;
 use app\_360Utils\APIResponses\ListResponse;
+use app\models\WrkConsolidadoFacturas;
 
 
 class ReportServiceController extends ServicesBaseController{
@@ -127,6 +128,10 @@ class ReportServiceController extends ServicesBaseController{
         return $response;
     }
 
+    /**
+     * Recupera la lista de envíos que no se han facturado para el día de hoy
+     * O para la fecha que se indica
+     */
     function actionGetEnviosSinFactura($fchInicio = null){
         if($fchInicio == null){
             $fchInicio = date("Y-m-d");
@@ -137,7 +142,8 @@ class ReportServiceController extends ServicesBaseController{
             ->joinWith('proveedor')
             ->where(['IS NOT', 'txt_tracking_number', null])
             ->andWhere(['IS', 'txt_identificador_proveedor' , null])
-          //  ->andWhere(['b_facturado'=>0,'date(fch_creacion)'=>$fchInicio])
+            ->andWhere(['b_facturado'=>0])
+            ->andWhere(['date(fch_creacion)'=>$fchInicio])
             ->all();
 
         $response = new ListResponse();
@@ -151,6 +157,12 @@ class ReportServiceController extends ServicesBaseController{
 
     }
 
+
+    /**
+     * 20190320
+     * Obtiene el listado de las facturas generadas 
+     * Para la empresa 360
+     */
     function actionGetFacturas360($fchInicio = null, $fchFin = null ){
 
         if($fchInicio == null){
@@ -162,10 +174,11 @@ class ReportServiceController extends ServicesBaseController{
         }
 
 
-        $envios = WrkEnvios::find()
-            ->joinWith('proveedor')
-            ->where(['between', 'fch_creacion', $fchInicio . ' 00:00:00', $fchFin . ' 23:59:59'])
-            ->andWhere(['IS NOT', 'b_factura_360', null]) 
+        $envios = WrkConsolidadoFacturas::find()
+            //->joinWith('proveedor')
+            //->where(['between', 'fch_creacion', $fchInicio . ' 00:00:00', $fchFin . ' 23:59:59'])
+            //->andWhere(['IS NOT', 'b_factura_360', null]) 
+            ->orderBy('fch_facturacion')
             ->all();
 
         $response = new ListResponse();

@@ -31,6 +31,7 @@ use app\models\RelEnvioExtras;
 use app\config\ServicesApiConfig;
 use yii\web\HttpException;
 use app\_dgomFactura\Entity\FacturaRequest;
+use app\models\WrkConsolidadoFacturas;
 
 /**
  * ConCategoiriesController implements the CRUD actions for ConCategoiries model.
@@ -841,15 +842,18 @@ class ApiController extends Controller
 
 
     /**
-     * Funcion 
+     * 20190320
+     * Funcion para generar el consolidado de facturas
      */
-    public function actionGenerarFacturaConsolidado(){
+    public function actionGenerarFacturaConsolidado($fecha, $type){
         $messageResponse = new MessageResponse();
 
         $request = Yii::$app->request;
         
-        $fch = $request->getBodyParam('fch');
-        $tipo = $request->getBodyParam('tipo');
+        // $fch = $request->getBodyParam('fecha');
+        // $tipo = $request->getBodyParam('tipo');
+        $fch = $fecha;
+        $tipo = $type;
 
         if($fch == null){
             $messageResponse->responseCode = -3;
@@ -883,13 +887,12 @@ class ApiController extends Controller
             return $messageResponse;
         }
 
-       
-
         $envio =  WrkEnvios::find()
             ->joinWith('proveedor')
             ->where(['IS NOT', 'txt_tracking_number', null])
             ->andWhere(['IS', 'txt_identificador_proveedor' , null])
-            ->andWhere(['b_facturado'=>0,'date(fch_creacion)'=>$fch])
+            ->andWhere(['b_facturado'=>0])
+            ->andWhere(['date(fch_creacion)'=>$fch])
             ->all();
 
 
@@ -921,8 +924,8 @@ class ApiController extends Controller
         // ---------------- Monto del envio ---------------------
         $montoTotal = $montoEnvios + $montoIva + $montoExtras;
 
-        $RFC_360     = "dgo130923fy0";
-        $NOMBRE_360  = "Envíos 360 de México, SA de CV";
+        $RFC_360     = Yii::$app->params ['company_rfc']; 
+        $NOMBRE_360  = Yii::$app->params ['company_name']; 
         $uuidFactura = uniqid("CONS_");
    
         
@@ -942,7 +945,7 @@ class ApiController extends Controller
         $facturaRequest->claveUnidad       = 'C62'; 
         $facturaRequest->unidad            = 'Uno';
         $facturaRequest->descripcion       = $nombreServicio;
-        $facturaRequest->valorUnitario     = $montoTotal;
+        $facturaRequest->valorUnitario     = number_format(($montoTotal / count($enviosList)), 2,'.','');
         $facturaRequest->importe           = $montoTotal;
         $facturaRequest->usoCFDIReceptor   = 'G03';
 
@@ -971,6 +974,32 @@ class ApiController extends Controller
                 $item->b_factura_360 = $uuidFactura;
                 $item->save();
             }
+
+            //Genera el registro en la base de datos de la factura generada
+            $uddi = uniqid("fact_");
+
+            //Copia los archivos de la factura al documento corresppondiente
+            $this->validarDirectorio("facturas/envios_360");
+            $this->validarDirectorio("facturas/envios_360" . "/" . $uddi);
+
+            $pdf = base64_decode($facturaGenerar->pdf);
+            $xml = base64_decode($facturaGenerar->xml);
+
+            file_put_contents("facturas/envios_360/" . $uddi . "/factura.pdf", $pdf);
+            file_put_contents("facturas/envios_360/" . $uddi . "/factura.xml", $xml);
+
+            $wrkConsolidadoFactura = new WrkConsolidadoFacturas();
+
+            $wrkConsolidadoFactura->uddi            = $uddi;
+            $wrkConsolidadoFactura->num_envios      = count($enviosList);
+            $wrkConsolidadoFactura->txt_tipo        = $nombreServicio;
+            $wrkConsolidadoFactura->fch_facturacion = $fecha;
+            $wrkConsolidadoFactura->fch_evento      = Calendario::getFechaActual();
+            $wrkConsolidadoFactura->txt_ruta_pdf    = "facturas/envios_360/" . $uddi . "/factura.pdf";
+            $wrkConsolidadoFactura->txt_ruta_xml    = "facturas/envios_360/" . $uddi . "/factura.xml";
+            $wrkConsolidadoFactura->txt_monto       = "" . $montoTotal;
+
+            $wrkConsolidadoFactura->save();
 
             $messageResponse->responseCode = 1;
             $messageResponse->message = "Facturado correctamente, factura: " . $uuidFactura;

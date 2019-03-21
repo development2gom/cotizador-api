@@ -30,9 +30,7 @@ class FacturacionController extends \yii\rest\Controller
         $request = Yii::$app->request;
         $params = $request->bodyParams;
         $uddi = $request->getBodyParam("uddi_factura");
-        // echo $uddi;
-        // exit;
-       return EntFacturacion::getFacturacionUddi($uddi);
+        return EntFacturacion::getFacturacionUddi($uddi);
     }
 
 }

@@ -129,8 +129,8 @@ class EntClientes extends \yii\db\ActiveRecord
     }
 
 
-    public function getTipoCliente(){
-        return $this->idTipoCliente->txt_nombre;
+    public function getTipoEstructuraCliente(){
+        return $this->idTipoEstructura->txt_nombre;
     }
 
     public static function getClienteByUddi($uddi){
@@ -153,7 +153,7 @@ class EntClientes extends \yii\db\ActiveRecord
         $fields = parent::fields();
         unset($fields["id_cliente"]);
         $fields[]   = "nombreCompleto";
-        $fields[]   = "tipoCliente";
+        $fields[]   = "tipoEstructuraCliente";
         return $fields;
     }
 }

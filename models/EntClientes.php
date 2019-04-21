@@ -8,24 +8,28 @@ use yii\web\HttpException;
 /**
  * This is the model class for table "ent_clientes".
  *
-* @property int $id_cliente
-* @property string $uddi
-* @property int $id_tipo_estructura 
-* @property string $txt_nombre
-* @property string $txt_razon_social 
-* @property string $txt_apellido_paterno
-* @property string $txt_apellido_materno
-* @property string $txt_rfc 
-* @property string $txt_tipo_persona 
-* @property string $num_telefono
-* @property string $txt_correo
-* @property int $b_habilitado
-* @property int $b_desea_registro 
-*
-* @property EntAreasClientes[] $entAreasClientes 
-* @property EntFacturacion[] $entFacturacions
-* @property EntOrdenesCompras[] $entOrdenesCompras
-* @property EntPagosRecibidos[] $entPagosRecibidos
+ * @property int $id_cliente
+ * @property string $uddi
+ * @property int $id_tipo_estructura
+ * @property string $txt_nombre
+ * @property string $txt_razon_social
+ * @property string $txt_apellido_paterno
+ * @property string $txt_apellido_materno
+ * @property string $txt_rfc
+ * @property string $txt_tipo_persona
+ * @property string $num_telefono
+ * @property string $txt_correo
+ * @property int $b_habilitado
+ * @property int $b_desea_registro
+ *
+ * @property EntAreasClientes[] $entAreasClientes
+ * @property CatTiposEstructuras $tipoEstructura
+ * @property EntFacturacion[] $entFacturacions
+ * @property EntOrdenesCompras[] $entOrdenesCompras
+ * @property EntPagosRecibidos[] $entPagosRecibidos
+ * @property WrkDestino[] $wrkDestinos
+ * @property WrkEnvios[] $wrkEnvios
+ * @property WrkOrigen[] $wrkOrigens
  */
 class EntClientes extends \yii\db\ActiveRecord
 {
@@ -43,11 +47,13 @@ class EntClientes extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['id_tipo_estructura', 'b_habilitado', 'id_cliente', 'b_desea_registro'], 'integer'],
-            [['uddi'], 'string', 'max' => 100],
+            [['id_tipo_estructura', 'b_habilitado', 'b_desea_registro'], 'integer'],
+            [['uddi', 'txt_razon_social'], 'string', 'max' => 100],
             [['txt_nombre', 'txt_apellido_paterno', 'txt_apellido_materno', 'txt_correo'], 'string', 'max' => 50],
-            [['num_telefono'], 'string', 'max' => 11],
+            [['txt_rfc'], 'string', 'max' => 13],
+            [['txt_tipo_persona', 'num_telefono'], 'string', 'max' => 20],
             [['uddi'], 'unique'],
+            [['id_tipo_estructura'], 'exist', 'skipOnError' => true, 'targetClass' => CatTiposEstructuras::className(), 'targetAttribute' => ['id_tipo_estructura' => 'id_tipo_estructura']],
         ];
     }
 
@@ -59,22 +65,35 @@ class EntClientes extends \yii\db\ActiveRecord
         return [
             'id_cliente' => 'Id Cliente',
             'uddi' => 'Uddi',
+            'id_tipo_estructura' => 'Id Tipo Estructura',
             'txt_nombre' => 'Txt Nombre',
+            'txt_razon_social' => 'Txt Razon Social',
             'txt_apellido_paterno' => 'Txt Apellido Paterno',
             'txt_apellido_materno' => 'Txt Apellido Materno',
+            'txt_rfc' => 'Txt Rfc',
+            'txt_tipo_persona' => 'Txt Tipo Persona',
             'num_telefono' => 'Num Telefono',
             'txt_correo' => 'Txt Correo',
             'b_habilitado' => 'B Habilitado',
+            'b_desea_registro' => 'B Desea Registro',
         ];
     }
 
-    /** 
-    * @return \yii\db\ActiveQuery 
-    */ 
-   public function getEntAreasClientes() 
-   { 
-       return $this->hasMany(EntAreasClientes::className(), ['id_cliente' => 'id_cliente']); 
-   }
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getEntAreasClientes()
+    {
+        return $this->hasMany(EntAreasClientes::className(), ['id_cliente' => 'id_cliente']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getTipoEstructura()
+    {
+        return $this->hasOne(CatTiposEstructuras::className(), ['id_tipo_estructura' => 'id_tipo_estructura']);
+    }
 
     /**
      * @return \yii\db\ActiveQuery

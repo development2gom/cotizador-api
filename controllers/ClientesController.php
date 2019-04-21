@@ -4,10 +4,8 @@ namespace app\controllers;
 use Yii;
 use yii\rest\Controller;
 use app\models\WrkEnvios;
-use yii\web\HttpException;
 use app\models\EntClientes;
 use app\models\EntClientesSearch;
-use app\models\WrkEnviosSearch;
 
 class ClientesController extends Controller{
 

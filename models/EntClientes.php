@@ -130,7 +130,7 @@ class EntClientes extends \yii\db\ActiveRecord
 
 
     public function getTipoEstructuraCliente(){
-        return $this->idTipoEstructura->txt_nombre;
+        return $this->tipoEstructura->txt_nombre;
     }
 
     public static function getClienteByUddi($uddi){

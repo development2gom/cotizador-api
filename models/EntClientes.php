@@ -153,7 +153,7 @@ class EntClientes extends \yii\db\ActiveRecord
         $fields = parent::fields();
         unset($fields["id_cliente"]);
         $fields[]   = "nombreCompleto";
-        //$fields[]   = "tipoCliente";
+        $fields[]   = "tipoCliente";
         return $fields;
     }
 }
